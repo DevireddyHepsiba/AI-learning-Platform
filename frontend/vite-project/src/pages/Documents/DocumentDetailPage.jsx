@@ -29,6 +29,7 @@ import {
 import { BASE_URL } from "../../utils/apiPath";
 
 const tabs = ["content", "chat", "ai", "flashcards", "quizzes"];
+const DEPLOYED_FILE_HOST = "https://ai-learning-platform-silk-eight.vercel.app";
 
 const DocumentDetailPage = () => {
   const { id } = useParams();
@@ -82,6 +83,11 @@ const DocumentDetailPage = () => {
     
     if (!filePath) return "";
     
+    // Rewrite legacy local host URLs to deployed host only.
+    if (filePath.includes("localhost:10000")) {
+      return filePath.replace("http://localhost:10000", DEPLOYED_FILE_HOST);
+    }
+
     // If already a full URL, return as-is
     if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
       return filePath;
