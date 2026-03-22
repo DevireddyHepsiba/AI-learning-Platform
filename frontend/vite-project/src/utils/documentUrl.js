@@ -3,13 +3,25 @@ export const resolveDocumentUrl = (rawUrl, options = {}) => {
   if (!value) return "";
 
   const apiBase = String(options.apiBase || "").replace(/\/+$/, "");
+  const fallbackApiBase = String(
+    options.fallbackApiBase || "https://ai-learning-platform-c2jg.onrender.com"
+  ).replace(/\/+$/, "");
   const currentOrigin =
     options.currentOrigin ||
     (typeof window !== "undefined" ? window.location.origin : "");
 
+  const isLocalhostOrigin = (url) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url);
+
+  const isDeployedClient = Boolean(currentOrigin) && !isLocalhostOrigin(currentOrigin);
+
+  const effectiveApiBase =
+    !apiBase || (isDeployedClient && isLocalhostOrigin(apiBase))
+      ? fallbackApiBase
+      : apiBase;
+
   const joinWithApiBase = (pathname) => {
-    if (!apiBase) return pathname;
-    return `${apiBase}${pathname}`;
+    if (!effectiveApiBase) return pathname;
+    return `${effectiveApiBase}${pathname}`;
   };
 
   if (value.startsWith("data:")) {
@@ -37,21 +49,21 @@ export const resolveDocumentUrl = (rawUrl, options = {}) => {
   }
 
   if (value.startsWith("/")) {
-    return apiBase ? `${apiBase}${value}` : value;
+    return effectiveApiBase ? `${effectiveApiBase}${value}` : value;
   }
 
   if (!value.includes("/")) {
-    return apiBase
-      ? `${apiBase}/uploads/documents/${value}`
+    return effectiveApiBase
+      ? `${effectiveApiBase}/uploads/documents/${value}`
       : `/uploads/documents/${value}`;
   }
 
   if (value.includes("uploads/documents/")) {
     const normalizedPath = `/${value.replace(/^\/+/, "")}`;
-    return apiBase ? `${apiBase}${normalizedPath}` : normalizedPath;
+    return effectiveApiBase ? `${effectiveApiBase}${normalizedPath}` : normalizedPath;
   }
 
-  return apiBase
-    ? `${apiBase}/uploads/documents/${value}`
+  return effectiveApiBase
+    ? `${effectiveApiBase}/uploads/documents/${value}`
     : `/uploads/documents/${value}`;
 };
