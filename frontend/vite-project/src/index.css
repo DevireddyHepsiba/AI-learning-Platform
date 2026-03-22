@@ -1,0 +1,44 @@
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Urbanist", sans-serif;
+  --breakpoint-3xl: 1920px;
+  --color-primary: #FF9324;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-display);
+  }
+
+  body {
+    background-color: #fdfbfc;
+  }
+}
+
+.flashcard-stage {
+  perspective: 1200px;
+}
+
+.flashcard-flip {
+  position: relative;
+  min-height: 320px;
+  transform-style: preserve-3d;
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flashcard-flip.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  position: absolute;
+  inset: 0;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
