@@ -3,6 +3,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { resolveDocumentUrl } from "../../utils/documentUrl";
 
 // Vite-safe worker URL import for react-pdf.
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -31,35 +32,12 @@ export default function PDFViewer({
   // Process document URL to handle various formats
   const processedDocUrl = useMemo(() => {
     if (!documentUrl) return null;
-    
-    // If it's a data URL or full URL, use it directly
-    if (documentUrl.startsWith("data:") || documentUrl.startsWith("http")) {
-      // Backward-compatibility: old sessions saved frontend-origin upload URL.
-      // Rewrite it to backend API base so it returns actual PDF bytes.
-      if (documentUrl.includes("/uploads/documents/")) {
-        try {
-          const currentOrigin = window.location.origin;
-          if (documentUrl.startsWith(currentOrigin)) {
-            const apiBase = import.meta.env.VITE_API_BASE || "http://https://ai-learning-platform-c2jg.onrender.com";
-            const pathname = new URL(documentUrl).pathname;
-            return `${apiBase}${pathname}`;
-          }
-        } catch {
-          // fall through to raw URL
-        }
-      }
-      return documentUrl;
-    }
-    
-    // If it's a relative path, prepend the backend URL
-    const apiBase = import.meta.env.VITE_API_BASE || "http://https://ai-learning-platform-c2jg.onrender.com";
-    
-    // Handle various path formats
-    if (documentUrl.startsWith("/")) {
-      return `${apiBase}${documentUrl}`;
-    }
-    
-    return `${apiBase}/uploads/${documentUrl}`;
+    const apiBase = import.meta.env.VITE_API_BASE || "https://ai-learning-platform-c2jg.onrender.com";
+
+    return resolveDocumentUrl(documentUrl, {
+      apiBase,
+      currentOrigin: typeof window !== "undefined" ? window.location.origin : "",
+    });
   }, [documentUrl]);
 
   const handleDocumentLoadSuccess = ({ numPages }) => {

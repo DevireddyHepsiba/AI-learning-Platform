@@ -27,9 +27,9 @@ import {
 } from "../../services/aiService";
 
 import { BASE_URL } from "../../utils/apiPath";
+import { resolveDocumentUrl } from "../../utils/documentUrl";
 
 const tabs = ["content", "chat", "ai", "flashcards", "quizzes"];
-const DEPLOYED_FILE_HOST = "https://ai-learning-platform-silk-eight.vercel.app";
 
 const DocumentDetailPage = () => {
   const { id } = useParams();
@@ -83,28 +83,10 @@ const DocumentDetailPage = () => {
     
     if (!filePath) return "";
     
-    // Rewrite legacy local host URLs to deployed host only.
-    if (filePath.includes("localhost:10000")) {
-      return filePath.replace("http://localhost:10000", DEPLOYED_FILE_HOST);
-    }
-
-    // If already a full URL, return as-is
-    if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-      return filePath;
-    }
-    
-    // If it's just a filename (no path separators), construct the path
-    if (!filePath.includes("/")) {
-      return `${BASE_URL}/uploads/documents/${filePath}`;
-    }
-    
-    // If relative path, prepend BASE_URL
-    if (filePath.startsWith("/")) {
-      return `${BASE_URL}${filePath}`;
-    }
-    
-    // Otherwise, assume it needs /uploads/documents/ prefix
-    return `${BASE_URL}/uploads/documents/${filePath}`;
+    return resolveDocumentUrl(filePath, {
+      apiBase: BASE_URL,
+      currentOrigin: typeof window !== "undefined" ? window.location.origin : "",
+    });
   }, [documentData]);
 
   useEffect(() => {
