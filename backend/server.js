@@ -57,8 +57,8 @@ const __dirname = path.dirname(__filename);
 /* Middlewares */
 app.use(cors({
   origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
+  methods: ["GET", "POST", "PUT", "DELETE"]
+  
 }));
 
 app.options("*", cors());
@@ -68,18 +68,29 @@ app.use(express.json());
 
 
 
+
+
+
+// const io = new Server(httpServer, {
+//   cors: {
+//     origin: (origin, callback) => {
+//       if (isAllowedOrigin(origin)) {
+//         callback(null, true);
+//         return;
+//       }
+
+//       callback(new Error(`Socket CORS blocked for origin: ${origin}`));
+//     },
+//     methods: ["GET", "POST"],
+//     credentials: true,
+//   },
+// });
+
+
 const io = new Server(httpServer, {
   cors: {
-    origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error(`Socket CORS blocked for origin: ${origin}`));
-    },
-    methods: ["GET", "POST"],
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST"]
   },
 });
 
@@ -110,7 +121,7 @@ const getPresenceList = (sessionId) => {
 connectDB();
 
 /* Middlewares */
-app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // Backward-compatible PDF file serving:
