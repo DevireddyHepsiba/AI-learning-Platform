@@ -29,28 +29,44 @@ const httpServer = createServer(app);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const configuredOrigins = (process.env.FRONTEND_URL || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+// const configuredOrigins = (process.env.FRONTEND_URL || "")
+//   .split(",")
+//   .map((origin) => origin.trim())
+//   .filter(Boolean);
 
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true;
-  if (configuredOrigins.includes(origin)) return true;
-  return /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
-};
+// const isAllowedOrigin = (origin) => {
+//   if (!origin) return true;
+//   if (configuredOrigins.includes(origin)) return true;
+//   return /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+// };
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) {
-      callback(null, true);
-      return;
-    }
+// const corsOptions = {
+//   origin: (origin, callback) => {
+//     if (isAllowedOrigin(origin)) {
+//       callback(null, true);
+//       return;
+//     }
 
-    callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
-  credentials: true,
-};
+//     callback(new Error(`CORS blocked for origin: ${origin}`));
+//   },
+//   credentials: true,
+// };
+
+
+
+/* Middlewares */
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
+app.options("*", cors());
+
+app.use(express.json());
+
+
+
 
 const io = new Server(httpServer, {
   cors: {
