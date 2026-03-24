@@ -12,8 +12,8 @@ const generateToken = (id) => {
 /* 📝 REGISTER */
 export const register = async (req, res, next) => {
   try {
-    console.log("🔥 REGISTER HIT", req.body);
-
+    // ⚠️ NEVER log req.body - it contains passwords!
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({

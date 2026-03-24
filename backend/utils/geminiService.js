@@ -35,27 +35,51 @@ async function generateContentWithFallback(contents) {
         message.includes("is not found") || message.includes("NOT_FOUND");
 
       if (!isModelNotFound) {
-        throw error;
+        // Log full error server-side but don't expose to client
+        console.error("[GEMINI ERROR]", {
+          message: error?.message,
+          status: error?.status,
+          code: error?.code,
+        });
+        
+        // Check for quota/auth errors
+        const isQuotaError =
+          message.includes("RESOURCE_EXHAUSTED") ||
+          message.includes("Quota exceeded") ||
+          message.includes("rate-limits") ||
+          message.includes("429");
+
+        const isAuthError =
+          message.includes("UNAUTHENTICATED") ||
+          message.includes("PERMISSION_DENIED") ||
+          message.includes("API key");
+
+        if (isQuotaError) {
+          const quotaError = new Error("API quota exceeded. Please try again later.");
+          quotaError.statusCode = 429;
+          throw quotaError;
+        }
+
+        if (isAuthError) {
+          const authError = new Error("API authentication failed. Please contact support.");
+          authError.statusCode = 401;
+          throw authError;
+        }
+
+        // For all other errors, throw a safe message
+        const safeError = new Error("Failed to generate AI response. Please try again.");
+        safeError.statusCode = 500;
+        safeError.originalError = error; // Keep for logging only
+        throw safeError;
       }
     }
   }
 
-  const rawMessage = String(lastError?.message || "");
-  const isQuotaError =
-    rawMessage.includes("RESOURCE_EXHAUSTED") ||
-    rawMessage.includes("Quota exceeded") ||
-    rawMessage.includes("rate-limits") ||
-    rawMessage.includes("429");
-
-  if (isQuotaError) {
-    const quotaError = new Error(
-      "Gemini API quota exceeded. Please wait and retry, or enable billing/increase quota for the API key project."
-    );
-    quotaError.statusCode = 429;
-    throw quotaError;
-  }
-
-  throw lastError;
+  // All models failed - throw safe error
+  console.error("[GEMINI ERROR] All models failed:", lastError?.message);
+  const error = new Error("Failed to generate AI response. Please try again.");
+  error.statusCode = 500;
+  throw error;
 }
 
 /* ---------- HELPERS ---------- */
