@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 export const inviteToSession = async (req, res) => {
   try {
     const { sessionId, sessionName, documentName, recipientEmail } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
     const userName = req.user.username;
 
     if (!sessionId || !recipientEmail) {
@@ -119,7 +119,7 @@ export const inviteToSession = async (req, res) => {
  */
 export const getNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const notifications = await Notification.find({ recipientId: userId })
       .sort({ createdAt: -1 })
