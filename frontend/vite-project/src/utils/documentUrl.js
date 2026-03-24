@@ -4,7 +4,7 @@ export const resolveDocumentUrl = (rawUrl, options = {}) => {
 
   const apiBase = String(options.apiBase || "").replace(/\/+$/, "");
   const fallbackApiBase = String(
-    options.fallbackApiBase || "https://ai-learning-platform-c2jg.onrender.com"
+    options.fallbackApiBase || "http://localhost:8000"
   ).replace(/\/+$/, "");
   const currentOrigin =
     options.currentOrigin ||

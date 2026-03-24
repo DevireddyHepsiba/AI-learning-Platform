@@ -14,7 +14,49 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const MODEL = "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL_FALLBACKS = [
+  MODEL,
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash",
+];
+
+async function generateContentWithFallback(contents) {
+  let lastError;
+
+  for (const model of [...new Set(MODEL_FALLBACKS)]) {
+    try {
+      return await ai.models.generateContent({ model, contents });
+    } catch (error) {
+      lastError = error;
+      const message = String(error?.message || "");
+      const isModelNotFound =
+        message.includes("is not found") || message.includes("NOT_FOUND");
+
+      if (!isModelNotFound) {
+        throw error;
+      }
+    }
+  }
+
+  const rawMessage = String(lastError?.message || "");
+  const isQuotaError =
+    rawMessage.includes("RESOURCE_EXHAUSTED") ||
+    rawMessage.includes("Quota exceeded") ||
+    rawMessage.includes("rate-limits") ||
+    rawMessage.includes("429");
+
+  if (isQuotaError) {
+    const quotaError = new Error(
+      "Gemini API quota exceeded. Please wait and retry, or enable billing/increase quota for the API key project."
+    );
+    quotaError.statusCode = 429;
+    throw quotaError;
+  }
+
+  throw lastError;
+}
 
 /* ---------- HELPERS ---------- */
 
@@ -69,10 +111,9 @@ TEXT:
 ${normalizedText.substring(0, 15000)}
 `;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  const response = await generateContentWithFallback([
+    { role: "user", parts: [{ text: prompt }] },
+  ]);
 
   const raw = extractText(response);
   const cleaned = cleanJson(raw);
@@ -104,10 +145,9 @@ TEXT:
 ${normalizedText.substring(0, 15000)}
 `;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  const response = await generateContentWithFallback([
+    { role: "user", parts: [{ text: prompt }] },
+  ]);
 
   const raw = extractText(response);
   const cleaned = cleanJson(raw);
@@ -128,10 +168,9 @@ TEXT:
 ${normalizedText.substring(0, 20000)}
 `;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  const response = await generateContentWithFallback([
+    { role: "user", parts: [{ text: prompt }] },
+  ]);
 
   return extractText(response);
 };
@@ -153,10 +192,9 @@ QUESTION:
 ${message}
 `;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  const response = await generateContentWithFallback([
+    { role: "user", parts: [{ text: prompt }] },
+  ]);
 
   return extractText(response);
 };
@@ -175,10 +213,9 @@ DOCUMENT:
 ${normalizedText.substring(0, 15000)}
 `;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  const response = await generateContentWithFallback([
+    { role: "user", parts: [{ text: prompt }] },
+  ]);
 
   return extractText(response);
 };
@@ -204,10 +241,9 @@ OPTIONAL CONTEXT:
 ${ctx || "N/A"}
 `;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  const response = await generateContentWithFallback([
+    { role: "user", parts: [{ text: prompt }] },
+  ]);
 
   return extractText(response);
 };

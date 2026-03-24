@@ -13,7 +13,7 @@ const sessionNotesSchema = new mongoose.Schema(
       default: "",
     },
     lastEditedBy: {
-      userId: mongoose.Schema.Types.ObjectId,
+      userId: String,
       username: String,
     },
   },

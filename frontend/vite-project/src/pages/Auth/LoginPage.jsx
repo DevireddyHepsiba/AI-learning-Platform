@@ -5,9 +5,20 @@ import authService from "../../services/authService";
 import { BrainCircuit, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 
+const LOGIN_ROLE = {
+  STUDENT: "student",
+  ADMIN: "admin",
+};
+
+const ADMIN_CREDENTIALS = {
+  email: "admin@ailearning.com",
+  password: "Admin@123",
+};
+
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState(LOGIN_ROLE.STUDENT);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,14 +45,36 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const { token, user } = await authService.login(normalizedEmail, password);
-      login(user, token);
-      toast.success("🎉 Welcome back! Successfully logged in.");
-      navigate("/dashboard");
+      if (selectedRole === LOGIN_ROLE.ADMIN) {
+        const isValidAdmin =
+          normalizedEmail === ADMIN_CREDENTIALS.email.toLowerCase() &&
+          password === ADMIN_CREDENTIALS.password;
+
+        if (!isValidAdmin) {
+          throw {
+            status: 401,
+            message: "Invalid admin credentials",
+          };
+        }
+
+        localStorage.setItem("isAdminAuthenticated", "true");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        toast.success("🎉 Welcome, Admin!");
+        navigate("/admin/dashboard");
+      } else {
+        const { token, user } = await authService.login(normalizedEmail, password);
+        localStorage.removeItem("isAdminAuthenticated");
+        login(user, token);
+        toast.success("🎉 Welcome back! Successfully logged in.");
+        navigate("/dashboard");
+      }
     } catch (err) {
       const message =
         err?.status === 401
-          ? "Invalid credentials. Please check email/password or register first."
+          ? selectedRole === LOGIN_ROLE.ADMIN
+            ? "Invalid admin credentials. Try the correct admin email and password."
+            : "Invalid credentials. Please check email/password or register first."
           : err?.error || err?.message || "Login failed";
       setError(message);
       toast.error(message);
@@ -79,6 +112,40 @@ const LoginPage = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Role Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Login as</label>
+              <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole(LOGIN_ROLE.STUDENT)}
+                  className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
+                    selectedRole === LOGIN_ROLE.STUDENT
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-slate-600 hover:text-slate-800"
+                  }`}
+                >
+                  Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole(LOGIN_ROLE.ADMIN)}
+                  className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
+                    selectedRole === LOGIN_ROLE.ADMIN
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-slate-600 hover:text-slate-800"
+                  }`}
+                >
+                  Admin
+                </button>
+              </div>
+              {selectedRole === LOGIN_ROLE.ADMIN && (
+                <p className="text-xs text-slate-500">
+                  Use admin credentials to open the admin dashboard.
+                </p>
+              )}
+            </div>
+
             {/* Email Field */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">

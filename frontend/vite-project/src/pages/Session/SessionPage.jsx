@@ -1282,7 +1282,7 @@ export default function SessionPage() {
                 }
               }}
               placeholder="Enter your name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               autoFocus
             />
             <button

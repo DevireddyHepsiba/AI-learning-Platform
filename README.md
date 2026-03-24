@@ -120,7 +120,7 @@ FRONTEND_URL=http://localhost:5173
 Create a frontend environment file:
 
 ~~~env
-VITE_API_BASE=http://localhost:8000
+VITE_API_BASE=https://ai-learning-platform-c2jg.onrender.com
 ~~~
 
 ## Installation and Local Run
@@ -159,8 +159,8 @@ npm run dev
 ## Default Local URLs
 
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:8000/api
-- Socket Server: http://localhost:8000
+- Backend API: http://ai-learning-platform-c2jg.onrender.com/api
+- Socket Server: https://ai-learning-platform-c2jg.onrender.com
 
 ## Main API Modules
 

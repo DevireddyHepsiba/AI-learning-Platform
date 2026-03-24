@@ -56,12 +56,9 @@ const __dirname = path.dirname(__filename);
 
 /* Middlewares */
 app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"]
-  
+  origin: process.env.FRONTEND_URL,
+  credentials: true
 }));
-
-app.options("*", cors());
 
 app.use(express.json());
 
@@ -514,19 +511,21 @@ io.on("connection", (socket) => {
   socket.on("update-notes", async (data) => {
     try {
       const { sessionId, userId, username, content } = data;
+      const normalizedUserId = String(userId || "").trim();
+      const normalizedUsername = String(username || "Guest").trim() || "Guest";
 
       // Update or create notes document
       await SessionNotes.findOneAndUpdate(
         { sessionId },
         {
           content,
-          lastEditedBy: { userId, username },
+          lastEditedBy: { userId: normalizedUserId, username: normalizedUsername },
         },
         { upsert: true }
       );
 
       // Broadcast to others in room (not sender to avoid echo)
-      socket.to(sessionId).emit("update-notes", { content, username });
+      socket.to(sessionId).emit("update-notes", { content, username: normalizedUsername });
 
       console.log(`[Socket] Notes updated in session ${sessionId}`);
     } catch (error) {

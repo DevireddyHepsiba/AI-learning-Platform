@@ -5,6 +5,39 @@ import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
 import fs from 'fs/promises';
 
+const resolvePublicBaseUrl = (req) => {
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
+    .split(',')[0]
+    .trim();
+  const protocol = forwardedProto || req.protocol || 'http';
+  const requestHost = req.get('host');
+
+  return (
+    process.env.BACKEND_PUBLIC_URL ||
+    process.env.PUBLIC_BASE_URL ||
+    (requestHost ? `${protocol}://${requestHost}` : '') ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://ai-learning-platform-c2jg.onrender.com'
+      : `http://localhost:${process.env.PORT || 8000}`)
+  );
+};
+
+const normalizeDocumentFilePath = (filePath, req) => {
+  const value = String(filePath || '').trim();
+  if (!value) return value;
+
+  if (!/^https?:\/\/localhost:\d+/i.test(value)) {
+    return value;
+  }
+
+  try {
+    const pathname = new URL(value).pathname;
+    return `${resolvePublicBaseUrl(req)}${pathname}`;
+  } catch {
+    return value;
+  }
+};
+
 //@desc upload pdf document
 //@route POST /api/document/upload
 //@access private
@@ -30,12 +63,7 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    // const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
-
-    const baseUrl =
-  process.env.NODE_ENV === "production"
-    ? "https://ai-learning-platform-c2jg.onrender.com"
-    : `http://localhost:${process.env.PORT || 8000}`;
+    const baseUrl = resolvePublicBaseUrl(req);
     
     const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
 
@@ -90,10 +118,15 @@ const processPDF = async (documentId, filePath) => {
 export const getDocuments = async (req, res, next) => {
   try {
     const documents = await Document.find({ userId: req.user._id });
+    const normalizedDocuments = documents.map((doc) => {
+      const documentData = doc.toObject();
+      documentData.filePath = normalizeDocumentFilePath(documentData.filePath, req);
+      return documentData;
+    });
 
     res.status(200).json({
       success: true,
-      data: documents,
+      data: normalizedDocuments,
     });
   } catch (error) {
     next(error);
@@ -132,6 +165,7 @@ export const getDocument = async (req, res, next) => {
     await document.save();
 
     const documentData = document.toObject();
+    documentData.filePath = normalizeDocumentFilePath(documentData.filePath, req);
     documentData.flashcardCount = flashcardCount;
     documentData.quizCount = quizCount;
 

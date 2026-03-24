@@ -19,9 +19,11 @@ import QuizTakePage from './pages/Quizzes/QuiztakePage';
 import QuizResultPage from './pages/Quizzes/QuizResultpage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import AdminDashboardPage from './pages/Dashboard/AdminDashboardPage';
 import SessionPage from './pages/Session/SessionPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 
 const App = () => {
   const {isAuthenticated,loading} = useAuth();
@@ -57,6 +59,11 @@ const App = () => {
           <Route path="/quizzes/:quizId" element={<QuizTakePage />} />
           <Route path="/quizzes/:quizId/results" element={<QuizResultPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+
+        {/* Admin protected routes */}
+        <Route element={<AdminProtectedRoute />}>
+          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         </Route>
 
         {/* 404 */}

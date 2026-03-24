@@ -21,7 +21,7 @@ try {
   console.log('/api/flashcards status', f.status);
   console.log('/api/flashcards body', await f.text());
 
-  const res = await fetch('http://https://ai-learning-platform-c2jg.onrender.com/api/ai/generate-flashcards', {
+  const res = await fetch('http://ai-learning-platform-c2jg.onrender.com/api/ai/generate-flashcards', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
