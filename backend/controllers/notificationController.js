@@ -2,14 +2,32 @@ import Notification from "../models/Notification.js";
 import User from "../models/User.js";
 import nodemailer from "nodemailer";
 
-// Create email transporter (configure with your email service)
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER || "your-email@gmail.com",
-    pass: process.env.EMAIL_PASSWORD || "your-app-password",
-  },
-});
+/**
+ * Create email transporter with environment credentials
+ * Only works if EMAIL_USER and EMAIL_PASSWORD are set
+ */
+const createEmailTransporter = () => {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASSWORD;
+
+  if (!emailUser || !emailPass) {
+    console.warn("⚠️ Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD.");
+    return null;
+  }
+
+  try {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Failed to create email transporter:", error.message);
+    return null;
+  }
+};
 
 /**
  * Send session invitation via email
@@ -79,18 +97,30 @@ export const inviteToSession = async (req, res) => {
     `;
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || "your-email@gmail.com",
+      from: process.env.EMAIL_USER,
       to: recipientEmail,
       subject: `Join study session: ${sessionName}`,
       html: emailContent,
     };
 
-    // Send email (non-blocking)
+    // Create transporter and send email
+    const transporter = createEmailTransporter();
+    
+    if (!transporter) {
+      console.error("❌ Cannot send email: Email service not configured");
+      return res.status(500).json({
+        success: false,
+        message: "Email service not configured on server. Please contact administrator.",
+        data: { recipientEmail, sessionId, shareLink },
+      });
+    }
+
+    // Send email via callback
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.error("Email send error:", error);
+        console.error("❌ Email send error:", error.message);
       } else {
-        console.log("Email sent:", info.response);
+        console.log("✅ Email sent successfully to:", recipientEmail);
       }
     });
 
