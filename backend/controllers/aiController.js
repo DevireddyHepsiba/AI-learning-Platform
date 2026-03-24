@@ -3,7 +3,6 @@ import Flashcard from "../models/Flashcard.js";
 import Quiz from "../models/Quiz.js";
 import ChatHistory from "../models/ChatHistory.js";
 import * as geminiService from "../utils/geminiService.js";
-import { getCacheKey, getFromCache, saveToCache } from "../utils/aiCache.js";
 
 /* ======================================================
    GENERATE FLASHCARDS
@@ -137,18 +136,9 @@ export const generateSummary = async (req, res, next) => {
       });
     }
 
-    // 🔹 Check cache first
-    const cacheKey = getCacheKey(req.user._id, "summary", documentId, {});
-    let summary = getFromCache(cacheKey);
-
-    // 🔹 If not cached, call Gemini API
-    if (!summary) {
-      summary = await geminiService.generateSummary(
-        document.extractedText
-      );
-      // 🔹 Cache the response
-      saveToCache(cacheKey, summary);
-    }
+    const summary = await geminiService.generateSummary(
+      document.extractedText
+    );
 
     res.status(200).json({
       success: true,
@@ -188,19 +178,11 @@ export const chat = async (req, res, next) => {
       });
     }
 
-    // 🔹 Check cache first
-    const cacheKey = getCacheKey(req.user._id, "chat", documentId, { message });
-    let aiReply = getFromCache(cacheKey);
-
-    // 🔹 If not cached, call Gemini API
-    if (!aiReply) {
-      aiReply = await geminiService.chat(
-        document.extractedText,
-        message
-      );
-      // 🔹 Cache the response
-      saveToCache(cacheKey, aiReply);
-    }
+    // 🔹 AI response
+    const aiReply = await geminiService.chat(
+      document.extractedText,
+      message
+    );
 
     // 🔹 Save properly in messages array
     const chatHistory = await ChatHistory.create({
@@ -251,19 +233,10 @@ export const explainConcept = async (req, res, next) => {
       });
     }
 
-    // 🔹 Check cache first
-    const cacheKey = getCacheKey(req.user._id, "explain", documentId, { concept });
-    let explanation = getFromCache(cacheKey);
-
-    // 🔹 If not cached, call Gemini API
-    if (!explanation) {
-      explanation = await geminiService.explainConcept(
-        document.extractedText,
-        concept
-      );
-      // 🔹 Cache the response
-      saveToCache(cacheKey, explanation);
-    }
+    const explanation = await geminiService.explainConcept(
+      document.extractedText,
+      concept
+    );
 
     res.status(200).json({
       success: true,
@@ -314,16 +287,7 @@ export const quickClarity = async (req, res, next) => {
       });
     }
 
-    // 🔹 Check cache first
-    const cacheKey = getCacheKey(req.user._id, "clarity", "", { selectedText, context });
-    let explanation = getFromCache(cacheKey);
-
-    // 🔹 If not cached, call Gemini API
-    if (!explanation) {
-      explanation = await geminiService.clarifySelection(selectedText, context || "");
-      // 🔹 Cache the response
-      saveToCache(cacheKey, explanation);
-    }
+    const explanation = await geminiService.clarifySelection(selectedText, context || "");
 
     res.status(200).json({
       success: true,

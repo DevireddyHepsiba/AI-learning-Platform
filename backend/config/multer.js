@@ -8,24 +8,12 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadDir = path.join(__dirname, "../uploads/documents");
-
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix =
-      Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
-  },
-});
+/**
+ * Use memory storage for multer - files are buffered in memory
+ * before being uploaded to Google Cloud Storage.
+ * This prevents file persistence issues on ephemeral file systems (like Render).
+ */
+const storage = multer.memoryStorage();
 
 // File filter - only PDFs
 const fileFilter = (req, file, cb) => {
@@ -36,7 +24,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure multer
+// Configure multer with memory storage
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,

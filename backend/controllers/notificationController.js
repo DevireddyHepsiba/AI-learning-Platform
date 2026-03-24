@@ -19,16 +19,8 @@ const transporter = nodemailer.createTransport({
 export const inviteToSession = async (req, res) => {
   try {
     const { sessionId, sessionName, documentName, recipientEmail } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
     const userName = req.user.username;
-
-    // Validate email credentials are configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      return res.status(500).json({
-        success: false,
-        message: "Email service is not configured on the server",
-      });
-    }
 
     if (!sessionId || !recipientEmail) {
       return res.status(400).json({
@@ -87,18 +79,18 @@ export const inviteToSession = async (req, res) => {
     `;
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: process.env.EMAIL_USER || "your-email@gmail.com",
       to: recipientEmail,
       subject: `Join study session: ${sessionName}`,
       html: emailContent,
     };
 
-    // Send email with proper error handling (blocking)
+    // Send email (non-blocking)
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.error("Email send error:", error);
       } else {
-        console.log("Email sent successfully:", info.response);
+        console.log("Email sent:", info.response);
       }
     });
 
@@ -127,7 +119,7 @@ export const inviteToSession = async (req, res) => {
  */
 export const getNotifications = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const notifications = await Notification.find({ recipientId: userId })
       .sort({ createdAt: -1 })
