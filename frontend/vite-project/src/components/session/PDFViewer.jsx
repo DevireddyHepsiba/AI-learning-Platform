@@ -29,10 +29,17 @@ export default function PDFViewer({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Get API base with proper environment handling
+  const getApiBase = () => {
+    const envBase = import.meta.env.VITE_API_BASE;
+    if (envBase) return envBase.replace(/\/+$/, "");
+    return "https://ai-learning-platform-c2jg.onrender.com";
+  };
+
   // Process document URL to handle various formats
   const processedDocUrl = useMemo(() => {
     if (!documentUrl) return null;
-    const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+    const apiBase = getApiBase();
 
     return resolveDocumentUrl(documentUrl, {
       apiBase,

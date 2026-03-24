@@ -1,8 +1,15 @@
 import { io } from "socket.io-client";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  `${window.location.protocol}//${window.location.hostname}:8000`;
+/**
+ * Get API base URL consistently - must match apiPath.js
+ */
+const getApiBase = () => {
+  const envBase = import.meta.env.VITE_API_BASE;
+  if (envBase) return envBase.replace(/\/+$/, "");
+  return "https://ai-learning-platform-c2jg.onrender.com";
+};
+
+const API_BASE = getApiBase();
 
 let socket = null;
 

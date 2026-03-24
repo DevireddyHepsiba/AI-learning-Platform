@@ -7,7 +7,8 @@ export const getAllFlashcardSets = async (req, res, next) => {
   try {
     const sets = await Flashcard.find({ userId: req.user._id })
       .populate("documentId", "title")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,

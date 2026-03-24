@@ -72,8 +72,15 @@ export default function CreateSessionModal({ isOpen, onClose }) {
         return;
       }
 
+      // Get API base with proper environment handling
+      const getApiBase = () => {
+        const envBase = import.meta.env.VITE_API_BASE;
+        if (envBase) return envBase.replace(/\/+$/, "");
+        return "https://ai-learning-platform-c2jg.onrender.com";
+      };
+
       // Create session via API
-      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+      const apiBase = getApiBase();
       const normalizedDocUrl = selectedDoc.filePath?.startsWith("http")
         ? selectedDoc.filePath
         : `${apiBase}/uploads/documents/${selectedDoc.fileName || selectedDoc._id}`;

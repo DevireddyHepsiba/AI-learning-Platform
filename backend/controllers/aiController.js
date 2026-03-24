@@ -259,7 +259,8 @@ export const getChatHistory = async (req, res, next) => {
     const history = await ChatHistory.find({
       userId: req.user._id,
       documentId,
-    }).sort({ createdAt: -1 });
+    }).sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,

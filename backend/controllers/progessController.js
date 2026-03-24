@@ -9,52 +9,94 @@ export const getDashboard = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    // Get counts
-    const totalDocuments = await Document.countDocuments({ userId });
-    const totalFlashcardSets = await Flashcard.countDocuments({ userId });
-    const totalQuizzes = await Quiz.countDocuments({ userId });
-    const completedQuizzes = await Quiz.countDocuments({
-      userId,
-      completedAt: { $ne: null },
-    });
+    // Use MongoDB aggregation for faster calculation instead of fetching all data
+    const [flashcardStats, quizStats, recentData] = await Promise.all([
+      // Flashcard stats using aggregation
+      Flashcard.aggregate([
+        { $match: { userId } },
+        {
+          $group: {
+            _id: null,
+            totalSets: { $sum: 1 },
+            totalCards: { $sum: { $size: "$cards" } },
+            reviewedCards: {
+              $sum: {
+                $size: {
+                  $filter: {
+                    input: "$cards",
+                    as: "card",
+                    cond: { $gt: ["$$card.reviewCount", 0] },
+                  },
+                },
+              },
+            },
+            starredCards: {
+              $sum: {
+                $size: {
+                  $filter: {
+                    input: "$cards",
+                    as: "card",
+                    cond: { $eq: ["$$card.isStarred", true] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      ]),
 
-    // Get flashcard statistics
-    const flashcardSets = await Flashcard.find({ userId });
+      // Quiz stats using aggregation ⚡ Much faster!
+      Quiz.aggregate([
+        { $match: { userId, completedAt: { $ne: null } } },
+        {
+          $group: {
+            _id: null,
+            totalCompleted: { $sum: 1 },
+            averageScore: { $avg: "$score" },
+          },
+        },
+      ]),
 
-    let totalFlashcards = 0;
-    let reviewedFlashcards = 0;
-    let starredFlashcards = 0;
+      // Recent activity in parallel
+      Promise.all([
+        Document.find({ userId })
+          .sort({ lastAccessed: -1 })
+          .limit(5)
+          .select("title fileName lastAccessed status")
+          .lean(),
 
-    flashcardSets.forEach((set) => {
-      totalFlashcards += set.cards.length;
-      reviewedFlashcards += set.cards.filter((c) => c.reviewCount > 0).length;
-      starredFlashcards += set.cards.filter((c) => c.isStarred).length;
-    });
+        Quiz.find({ userId })
+          .sort({ createdAt: -1 })
+          .limit(5)
+          .populate("documentId", "title")
+          .select("title score totalQuestions completedAt")
+          .lean(),
+      ]),
+    ]);
 
-    // Get quiz statistics
-    const quizzes = await Quiz.find({
-      userId,
-      completedAt: { $ne: null },
-    });
+    // Extract aggregation results
+    const flashcardData = flashcardStats[0] || {
+      totalSets: 0,
+      totalCards: 0,
+      reviewedCards: 0,
+      starredCards: 0,
+    };
 
-    const averageScore =
-      quizzes.length > 0
-        ? Math.round(
-            quizzes.reduce((sum, q) => sum + q.score, 0) / quizzes.length
-          )
-        : 0;
+    const quizData = quizStats[0] || {
+      totalCompleted: 0,
+      averageScore: 0,
+    };
 
-    // Recent activity
-    const recentDocuments = await Document.find({ userId })
-      .sort({ lastAccessed: -1 })
-      .limit(5)
-      .select("title fileName lastAccessed status");
+    const [recentDocuments, recentQuizzes] = recentData;
 
-    const recentQuizzes = await Quiz.find({ userId })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("documentId", "title")
-      .select("title score totalQuestions completedAt");
+    // Get counts (these are fast)
+    const [totalDocuments, totalFlashcardSets, totalQuizzes, completedQuizzes] =
+      await Promise.all([
+        Document.countDocuments({ userId }),
+        Flashcard.countDocuments({ userId }),
+        Quiz.countDocuments({ userId }),
+        Quiz.countDocuments({ userId, completedAt: { $ne: null } }),
+      ]);
 
     // Study streak (mock data)
     const studyStreak = Math.floor(Math.random() * 7) + 1;
@@ -65,12 +107,12 @@ export const getDashboard = async (req, res, next) => {
         overview: {
           totalDocuments,
           totalFlashcardSets,
-          totalFlashcards,
-          reviewedFlashcards,
-          starredFlashcards,
+          totalFlashcards: flashcardData.totalCards,
+          reviewedFlashcards: flashcardData.reviewedCards,
+          starredFlashcards: flashcardData.starredCards,
           totalQuizzes,
           completedQuizzes,
-          averageScore,
+          averageScore: Math.round(quizData.averageScore || 0),
           studyStreak,
         },
         recentActivity: {

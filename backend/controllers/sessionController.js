@@ -131,7 +131,8 @@ export const getUserSessions = async (req, res) => {
 
     const sessions = await Session.find({ createdBy: userId })
       .select("sessionId documentName createdAt")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,

@@ -1,10 +1,19 @@
+/**
+ * Get API base URL consistently - must match apiPath.js
+ */
+const getApiBase = () => {
+  const envBase = import.meta.env.VITE_API_BASE;
+  if (envBase) return envBase.replace(/\/+$/, "");
+  return "https://ai-learning-platform-c2jg.onrender.com";
+};
+
 export const resolveDocumentUrl = (rawUrl, options = {}) => {
   const value = String(rawUrl || "").trim();
   if (!value) return "";
 
   const apiBase = String(options.apiBase || "").replace(/\/+$/, "");
   const fallbackApiBase = String(
-    options.fallbackApiBase || "http://localhost:8000"
+    options.fallbackApiBase || getApiBase()
   ).replace(/\/+$/, "");
   const currentOrigin =
     options.currentOrigin ||

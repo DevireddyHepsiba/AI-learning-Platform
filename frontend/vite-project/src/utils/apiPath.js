@@ -1,5 +1,17 @@
-export const BASE_URL =
-  import.meta.env.VITE_API_BASE || "http://localhost:8000";
+/**
+ * Get API base URL with proper environment variable handling
+ * Ensures production deployment on Vercel/hosting platforms works correctly
+ */
+const getApiBase = () => {
+  // In production build, use env var or default to deployed backend
+  const envBase = import.meta.env.VITE_API_BASE;
+  if (envBase) return envBase.replace(/\/+$/, ""); // Remove trailing slashes
+  
+  // Fallback: if running in browser, use deployed URL
+  return "https://ai-learning-platform-c2jg.onrender.com";
+};
+
+export const BASE_URL = getApiBase();
 
 export const API_PATHS = {
   AUTH: {
