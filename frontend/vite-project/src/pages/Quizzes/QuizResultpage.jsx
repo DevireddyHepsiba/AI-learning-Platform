@@ -155,8 +155,7 @@ const QuizResultpage = () => {
                   <p className="mt-2 text-slate-700">{item.explanation}</p>
                 </div>
               )}
-            </div>
-          ))}
+            </div>          );          ))}
         </div>
       </div>
     </AppShell>
