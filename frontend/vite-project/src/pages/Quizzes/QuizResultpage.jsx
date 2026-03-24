@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, XCircle, Check, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppShell from "../../components/auth/layout/AppShell";
@@ -98,23 +98,36 @@ const QuizResultpage = () => {
                 {item.options.map((option) => {
                   const isSelected = item.selectedAnswer === option;
                   const isCorrect = item.correctAnswer === option;
+                  
                   return (
                     <div
                       key={option}
-                      className={`rounded-xl border px-4 py-3 ${
+                      className={`rounded-xl border-2 px-4 py-3 transition-all ${
                         isCorrect
-                          ? "border-emerald-400 bg-emerald-50"
-                          : isSelected
-                          ? "border-rose-300 bg-rose-50"
-                          : "border-slate-200"
+                          ? "border-emerald-500 bg-emerald-100"
+                          : isSelected && !isCorrect
+                          ? "border-rose-500 bg-rose-100"
+                          : "border-slate-200 bg-white"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span>{option}</span>
-                        {isSelected && !isCorrect && (
-                          <span className="text-xs font-semibold text-rose-600">Your Answer</span>
-                        )}
-                        {isCorrect && <span className="text-xs font-semibold text-emerald-700">Correct</span>}
+                        <span className={`font-bold ${isCorrect ? "text-emerald-800" : isSelected && !isCorrect ? "text-rose-800" : "text-slate-700"}`}>
+                          {option}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {isCorrect && (
+                            <div className="flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-500 text-white">
+                              <Check size={16} />
+                              <span className="text-xs font-bold">Correct Answer</span>
+                            </div>
+                          )}
+                          {isSelected && !isCorrect && (
+                            <div className="flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-500 text-white">
+                              <X size={16} />
+                              <span className="text-xs font-bold">Your Answer</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
