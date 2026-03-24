@@ -3,7 +3,6 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
-import { uploadToGCS, deleteFromGCS } from '../utils/gcsService.js';
 import fs from 'fs/promises';
 
 const resolvePublicBaseUrl = (req) => {
