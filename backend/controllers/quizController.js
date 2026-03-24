@@ -77,6 +77,23 @@ export const submitQuiz = async (req, res, next) => {
 
     const { userAnswers: submittedAnswers } = req.body;
 
+    // Validate userAnswers exists and is an array
+    if (!submittedAnswers || !Array.isArray(submittedAnswers)) {
+      return res.status(400).json({
+        success: false,
+        error: "userAnswers must be a non-empty array",
+        statusCode: 400,
+      });
+    }
+
+    if (submittedAnswers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Please answer at least one question",
+        statusCode: 400,
+      });
+    }
+
     let correctCount = 0;
     const userAnswers = [];
 
