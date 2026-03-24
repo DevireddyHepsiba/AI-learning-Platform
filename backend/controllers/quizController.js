@@ -85,7 +85,10 @@ export const submitQuiz = async (req, res, next) => {
 
       if (questionIndex < quiz.questions.length) {
         const question = quiz.questions[questionIndex];
-        const isCorrect = selectedAnswer === question.correctAnswer;
+        // Normalize both answers for accurate comparison
+        const normalizedSelected = String(selectedAnswer || "").trim();
+        const normalizedCorrect = String(question.correctAnswer || "").trim();
+        const isCorrect = normalizedSelected === normalizedCorrect;
 
         if (isCorrect) correctCount++;
 
