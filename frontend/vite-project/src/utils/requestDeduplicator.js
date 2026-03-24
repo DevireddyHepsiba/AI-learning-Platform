@@ -8,7 +8,7 @@ const pendingRequests = new Map();
 /**
  * Generate a cache key from request config
  */
-const getCacheKey = (config) => {
+export const getCacheKey = (config) => {
   const method = config.method || "get";
   const url = config.url || "";
   const params = JSON.stringify(config.params || {});
