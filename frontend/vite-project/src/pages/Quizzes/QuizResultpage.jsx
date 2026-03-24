@@ -96,11 +96,12 @@ const QuizResultpage = () => {
 
               <div className="mt-4 space-y-2">
                 {item.options.map((option) => {
-                  // Normalize both for accurate comparison (match backend logic)
+                  // Normalize all for accurate comparison (match backend logic)
                   const normalizedOption = String(option || "").trim();
                   const normalizedCorrectAnswer = String(item.correctAnswer || "").trim();
+                  const normalizedSelectedAnswer = String(item.selectedAnswer || "").trim();
                   
-                  const isSelected = item.selectedAnswer === option;
+                  const isSelected = normalizedSelectedAnswer === normalizedOption;
                   const isCorrect = normalizedCorrectAnswer === normalizedOption;
                   
                   return (
