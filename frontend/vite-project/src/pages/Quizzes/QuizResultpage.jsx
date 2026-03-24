@@ -81,11 +81,21 @@ const QuizResultpage = () => {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Detailed Review</h2>
 
-          {results.map((item, index) => (
+          {results.map((item, index) => {
+            // Calculate if user got this question correct by comparing normalized values
+            const itemCorrect = item.options.some((opt) => {
+              const normalizedOption = String(opt || "").trim();
+              const normalizedCorrectAnswer = String(item.correctAnswer || "").trim();
+              const normalizedSelectedAnswer = String(item.selectedAnswer || "").trim();
+              return normalizedCorrectAnswer === normalizedOption && 
+                     normalizedSelectedAnswer === normalizedOption;
+            });
+
+            return (
             <div key={item.questionIndex} className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex px-3 py-1 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold">Question {index + 1}</span>
-                {item.isCorrect ? (
+                {itemCorrect ? (
                   <CheckCircle2 className="text-emerald-600" size={20} />
                 ) : (
                   <XCircle className="text-rose-600" size={20} />
