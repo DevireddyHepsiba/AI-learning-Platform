@@ -54,6 +54,7 @@ export const uploadDocument = async (req, res, next) => {
     const { title } = req.body;
 
     if (!title) {
+      await fs.unlink(req.file.path);
       return res.status(400).json({
         success: false,
         error: 'Please provide a document title',
@@ -61,26 +62,8 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    /**
-     * Upload to Google Cloud Storage (persistent across server restarts)
-     * If GCS is not configured, the file data is lost after processing
-     * (multer memory storage is temporary)
-     */
-    const gcsResult = await uploadToGCS(req.file.buffer, req.file.originalname);
-
-    // Use GCS URL if available, otherwise construct local URL as fallback
-    let fileUrl;
-    if (gcsResult) {
-      fileUrl = gcsResult.url;
-      console.log(`[Document] Using GCS URL: ${fileUrl}`);
-    } else {
-      // Fallback for local storage (not recommended on Render)
-      const baseUrl = resolvePublicBaseUrl(req);
-      fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
-      console.warn(
-        "[Document] GCS not configured. Using local storage (temporary on Render)"
-      );
-    }
+    const baseUrl = resolvePublicBaseUrl(req);
+    const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
 
     const document = await Document.create({
       userId: req.user._id,
@@ -91,13 +74,22 @@ export const uploadDocument = async (req, res, next) => {
       status: 'processing',
     });
 
-    /**
-     * Process PDF in background
-     * Extract text and create chunks for AI features
-     */
-    processPDFBuffer(document._id, req.file.buffer).catch((err) => {
+    processPDF(document._id, req.file.path).catch((err) => {
       console.error('PDF processing error:', err);
     });
+
+    res.status(201).json({
+      success: true,
+      data: document,
+      message: 'Document uploaded successfully. Processing in progress...',
+    });
+  } catch (error) {
+    if (req.file) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
+    next(error);
+  }
+};
 
     res.status(201).json({
       success: true,
@@ -109,10 +101,10 @@ export const uploadDocument = async (req, res, next) => {
   }
 };
 
-// Helper function - Process PDF buffer (from multer memory storage)
-const processPDFBuffer = async (documentId, pdfBuffer) => {
+// Helper function - Process PDF from file path
+const processPDF = async (documentId, filePath) => {
   try {
-    const { text } = await extractTextFromPDF(pdfBuffer);
+    const { text } = await extractTextFromPDF(filePath);
 
     const chunks = chunkText(text, 500, 50);
 

@@ -1,10 +1,10 @@
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
-import { ServerClient } from "postmark";
+import postmark from "postmark";
 
 /**
  * Initialize Postmark email client
- * Only works if POSTMARK_API_TOKEN is set
+ * Works on Render free tier (nodemailer/Gmail doesn't)
  */
 const getPostmarkClient = () => {
   const apiToken = process.env.POSTMARK_API_TOKEN;
@@ -15,7 +15,7 @@ const getPostmarkClient = () => {
   }
 
   try {
-    return new ServerClient(apiToken);
+    return new postmark.ServerClient(apiToken);
   } catch (error) {
     console.error("❌ Failed to initialize Postmark:", error.message);
     return null;
@@ -90,16 +90,16 @@ export const inviteToSession = async (req, res) => {
     `;
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: recipientEmail,
-      subject: `Join study session: ${sessionName}`,
-      html: emailContent,
+      From: process.env.POSTMARK_FROM_EMAIL || "noreply@ailearning.app",
+      To: recipientEmail,
+      Subject: `Join study session: ${sessionName}`,
+      HtmlBody: emailContent,
     };
 
-    // Initialize Postmark client and send email
-    const client = getPostmarkClient();
+    // Initialize Postmark client
+    const postmarkClient = getPostmarkClient();
     
-    if (!client) {
+    if (!postmarkClient) {
       console.error("❌ Cannot send email: Postmark not configured");
       return res.status(500).json({
         success: false,
@@ -109,16 +109,13 @@ export const inviteToSession = async (req, res) => {
     }
 
     // Send email via Postmark (non-blocking)
-    client.sendEmail({
-      From: process.env.POSTMARK_FROM_EMAIL || "noreply@learningplatform.com",
-      To: recipientEmail,
-      Subject: `Join study session: ${sessionName}`,
-      HtmlBody: emailContent,
-    }).then(() => {
-      console.log("✅ Email sent successfully to:", recipientEmail);
-    }).catch((error) => {
-      console.error("❌ Email send error:", error.message);
-    });
+    postmarkClient.sendEmail(mailOptions)
+      .then(() => {
+        console.log("✅ Email sent successfully to:", recipientEmail);
+      })
+      .catch((error) => {
+        console.error("❌ Email send error:", error.message);
+      });
 
     res.status(201).json({
       success: true,

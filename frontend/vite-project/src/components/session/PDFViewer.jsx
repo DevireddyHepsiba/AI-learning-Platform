@@ -55,7 +55,19 @@ export default function PDFViewer({
 
   const handleDocumentLoadError = (error) => {
     console.error("[PDF] Load error:", error);
-    setError(`Failed to load PDF: ${error.message}`);
+    
+    // Check if it's a 404 (file not found) error
+    const errorMessage = error?.message || error?.toString() || "Unknown error";
+    const is404 = errorMessage.includes("404") || errorMessage.includes("not found");
+    
+    if (is404) {
+      setError(
+        "PDF file not found. The document may have been deleted from the server. " +
+        "Please re-upload the document to use it again."
+      );
+    } else {
+      setError(`Failed to load PDF: ${errorMessage}`);
+    }
     setLoading(false);
   };
 
@@ -82,11 +94,13 @@ export default function PDFViewer({
     return (
       <div className="w-full h-full flex items-center justify-center bg-red-50 rounded-lg p-4">
         <div className="text-center text-red-600 max-w-md">
-          <p className="font-semibold text-lg mb-2">Error loading PDF</p>
-          <p className="text-sm mb-3">{error}</p>
-          <p className="text-xs text-gray-600 break-all bg-white p-2 rounded border border-red-200">
-            URL: {processedDocUrl || documentUrl || "No URL provided"}
-          </p>
+          <div className="text-4xl mb-4">⚠️</div>
+          <p className="font-semibold text-lg mb-3">{error}</p>
+          {error.includes("not found") && (
+            <p className="text-sm text-gray-600 mb-4">
+              You can re-upload this document in the Documents section to use it in this session.
+            </p>
+          )}
           <button
             onClick={() => {
               setError(null);
@@ -94,7 +108,7 @@ export default function PDFViewer({
             }}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
           >
-            Retry
+            Try Again
           </button>
         </div>
       </div>
