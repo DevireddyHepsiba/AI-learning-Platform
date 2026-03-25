@@ -43,7 +43,13 @@ const normalizeDocumentFilePath = (filePath, req) => {
 //@access private
 export const uploadDocument = async (req, res, next) => {
   try {
+    console.log('[Document Upload] Request received');
+    console.log('[Document Upload] req.file:', req.file ? { filename: req.file.filename, path: req.file.path, size: req.file.size } : 'NO FILE');
+    console.log('[Document Upload] req.body:', req.body);
+    console.log('[Document Upload] req.user:', req.user ? { _id: req.user._id } : 'NO USER');
+
     if (!req.file) {
+      console.log('[Document Upload] ERROR: No file provided');
       return res.status(400).json({
         success: false,
         error: 'Please upload a PDF file',
@@ -54,7 +60,8 @@ export const uploadDocument = async (req, res, next) => {
     const { title } = req.body;
 
     if (!title) {
-      await fs.unlink(req.file.path);
+      console.log('[Document Upload] ERROR: No title provided');
+      await fs.unlink(req.file.path).catch(() => {});
       return res.status(400).json({
         success: false,
         error: 'Please provide a document title',
@@ -62,6 +69,7 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
+    console.log('[Document Upload] Creating document record...');
     const baseUrl = resolvePublicBaseUrl(req);
     const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
 
@@ -74,16 +82,22 @@ export const uploadDocument = async (req, res, next) => {
       status: 'processing',
     });
 
+    console.log('[Document Upload] Document created:', document._id);
+
     processPDF(document._id, req.file.path).catch((err) => {
       console.error('PDF processing error:', err);
     });
 
+    console.log('[Document Upload] Success');
     res.status(201).json({
       success: true,
       data: document,
       message: 'Document uploaded successfully. Processing in progress...',
     });
   } catch (error) {
+    console.error('[Document Upload] CAUGHT ERROR:', error.message || error);
+    console.error('[Document Upload] ERROR STACK:', error.stack);
+    
     if (req.file) {
       await fs.unlink(req.file.path).catch(() => {});
     }
