@@ -51,15 +51,46 @@ import pdf from "pdf-parse";
  */
 export const extractTextFromPDF = async (buffer) => {
   try {
-    const data = await pdf(buffer);
+    // 🔍 Validate buffer is actually a PDF (check magic bytes)
+    if (!buffer || buffer.length < 4) {
+      throw new Error('Buffer is empty or too small to be a valid PDF');
+    }
+
+    // Check for PDF magic bytes: %PDF
+    const magicBytes = buffer.subarray(0, 4).toString('ascii');
+    console.log('[PDF Parser] Magic bytes:', magicBytes);
+    
+    if (!magicBytes.startsWith('%PDF')) {
+      throw new Error(`Invalid PDF magic bytes. Got: ${magicBytes}, expected: %PDF`);
+    }
+
+    console.log('[PDF Parser] Buffer validation passed:', buffer.length, 'bytes');
+
+    // Parse the PDF with timeout
+    const data = await Promise.race([
+      pdf(buffer),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('PDF parsing timeout (30s)')), 30000)
+      ),
+    ]);
+
+    console.log('[PDF Parser] Successfully parsed:', {
+      pages: data.numpages,
+      textLength: data.text?.length || 0,
+    });
 
     return {
-      text: data.text,
+      text: data.text || '',
       numPages: data.numpages,
       info: data.info,
     };
   } catch (error) {
-    console.error("❌ PDF parsing error:", error.message);
+    console.error('❌ PDF parsing error:', {
+      message: error.message,
+      bufferSize: buffer?.length,
+      bufferType: buffer?.constructor?.name,
+      stack: error.stack,
+    });
     throw error;
   }
 };
