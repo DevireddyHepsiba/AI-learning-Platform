@@ -96,7 +96,7 @@ export const uploadDocument = async (req, res, next) => {
         const stream = cloudinary.uploader.upload_stream(
           {
             folder: 'ai-learning-documents',
-            resource_type: 'image', // ✅ PDF renders as image for preview
+            resource_type: 'raw', // ✅ PDF as raw document
           },
           (error, result) => {
             if (error) reject(error);
