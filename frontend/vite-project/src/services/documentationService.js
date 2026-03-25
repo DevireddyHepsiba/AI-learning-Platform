@@ -40,7 +40,14 @@ const uploadDocument = async (formData) => {
 
     return response.data;
   } catch (error) {
-    throw normalizeError(error, "Failed to upload document");
+    throw {
+      ...(error.response?.data || {}),
+      status: error.response?.status,
+      message:
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Failed to upload document",
+    };
   }
 };
 
