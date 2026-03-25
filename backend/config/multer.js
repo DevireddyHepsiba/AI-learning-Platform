@@ -8,27 +8,11 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads/documents directory exists
-const uploadsDir = path.join(__dirname, '..', 'uploads', 'documents');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
 /**
- * Use disk storage for multer - files are saved to disk for PDF processing
+ * Use memory storage - we'll manually save to disk in the controller
+ * This gives us better control and error handling
  */
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename: timestamp-randomId-originalName
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substr(2, 9);
-    const originalName = file.originalname;
-    cb(null, `${timestamp}-${randomId}-${originalName}`);
-  },
-});
+const storage = multer.memoryStorage();
 
 // File filter - only PDFs
 const fileFilter = (req, file, cb) => {
@@ -39,7 +23,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure multer with disk storage
+// Configure multer with memory storage
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,

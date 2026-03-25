@@ -4,6 +4,22 @@ import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
 import fs from 'fs/promises';
+import fsSync from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure uploads/documents directory exists
+const uploadsDir = path.join(__dirname, '..', 'uploads', 'documents');
+try {
+  if (!fsSync.existsSync(uploadsDir)) {
+    fsSync.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (err) {
+  console.error('[Init] Failed to create uploads directory:', err.message);
+}
 
 const resolvePublicBaseUrl = (req) => {
   const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
@@ -42,11 +58,12 @@ const normalizeDocumentFilePath = (filePath, req) => {
 //@route POST /api/document/upload
 //@access private
 export const uploadDocument = async (req, res, next) => {
+  let savedFilePath = null;
+  
   try {
     console.log('[Document Upload] Request received');
-    console.log('[Document Upload] req.file:', req.file ? { filename: req.file.filename, path: req.file.path, size: req.file.size } : 'NO FILE');
+    console.log('[Document Upload] req.file:', req.file ? { fieldname: req.file.fieldname, originalname: req.file.originalname, size: req.file.size } : 'NO FILE');
     console.log('[Document Upload] req.body:', req.body);
-    console.log('[Document Upload] req.user:', req.user ? { _id: req.user._id } : 'NO USER');
 
     if (!req.file) {
       console.log('[Document Upload] ERROR: No file provided');
@@ -61,7 +78,6 @@ export const uploadDocument = async (req, res, next) => {
 
     if (!title) {
       console.log('[Document Upload] ERROR: No title provided');
-      await fs.unlink(req.file.path).catch(() => {});
       return res.status(400).json({
         success: false,
         error: 'Please provide a document title',
@@ -69,10 +85,36 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    console.log('[Document Upload] Creating document record...');
-    const baseUrl = resolvePublicBaseUrl(req);
-    const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
+    if (!req.user || !req.user._id) {
+      console.log('[Document Upload] ERROR: User not authenticated');
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+        statusCode: 401,
+      });
+    }
 
+    // Ensure directory exists
+    if (!fsSync.existsSync(uploadsDir)) {
+      fsSync.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substr(2, 9);
+    const filename = `${timestamp}-${randomId}-${req.file.originalname}`;
+    savedFilePath = path.join(uploadsDir, filename);
+
+    // Save file buffer to disk
+    console.log('[Document Upload] Saving file to disk:', savedFilePath);
+    await fs.writeFile(savedFilePath, req.file.buffer);
+    console.log('[Document Upload] File saved successfully');
+
+    // Create database record
+    const baseUrl = resolvePublicBaseUrl(req);
+    const fileUrl = `${baseUrl}/uploads/documents/${filename}`;
+
+    console.log('[Document Upload] Creating document record...');
     const document = await Document.create({
       userId: req.user._id,
       title,
@@ -84,11 +126,12 @@ export const uploadDocument = async (req, res, next) => {
 
     console.log('[Document Upload] Document created:', document._id);
 
-    processPDF(document._id, req.file.path).catch((err) => {
-      console.error('PDF processing error:', err);
+    // Process PDF asynchronously
+    processPDF(document._id, savedFilePath).catch((err) => {
+      console.error('[Document Upload] PDF processing error:', err.message);
     });
 
-    console.log('[Document Upload] Success');
+    console.log('[Document Upload] Success - returning 201');
     res.status(201).json({
       success: true,
       data: document,
@@ -98,9 +141,16 @@ export const uploadDocument = async (req, res, next) => {
     console.error('[Document Upload] CAUGHT ERROR:', error.message || error);
     console.error('[Document Upload] ERROR STACK:', error.stack);
     
-    if (req.file) {
-      await fs.unlink(req.file.path).catch(() => {});
+    // Clean up saved file if upload failed
+    if (savedFilePath) {
+      try {
+        await fs.unlink(savedFilePath);
+        console.log('[Document Upload] Cleaned up partial file');
+      } catch (cleanupErr) {
+        console.error('[Document Upload] Failed to cleanup file:', cleanupErr.message);
+      }
     }
+    
     next(error);
   }
 };
