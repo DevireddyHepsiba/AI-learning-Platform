@@ -51,7 +51,29 @@ import pdf from "pdf-parse";
  */
 export const extractTextFromPDF = async (buffer) => {
   try {
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Buffer is empty or invalid');
+    }
+
+    console.log(`[PDF Parse] Processing buffer of ${buffer.length} bytes`);
+    
+    // Parse PDF
     const data = await pdf(buffer);
+
+    console.log(`[PDF Parse] ✅ PDF parsed successfully`);
+    console.log(`[PDF Parse] Pages: ${data.numpages}`);
+    console.log(`[PDF Parse] Text length: ${data.text?.length || 0}`);
+    console.log(`[PDF Parse] First 100 chars: ${data.text?.substring(0, 100)}`);
+
+    if (!data.text || data.text.trim().length === 0) {
+      console.warn(`[PDF Parse] ⚠️ WARNING: PDF has no extractable text!`);
+      // Return minimal data even if empty
+      return {
+        text: data.text || '',
+        numPages: data.numpages || 0,
+        info: data.info || {},
+      };
+    }
 
     return {
       text: data.text,
@@ -59,7 +81,8 @@ export const extractTextFromPDF = async (buffer) => {
       info: data.info,
     };
   } catch (error) {
-    console.error("❌ PDF parsing error:", error.message);
+    console.error(`[PDF Parse] ❌ ERROR:`, error.message || error);
+    console.error(`[PDF Parse] Stack:`, error.stack);
     throw error;
   }
 };

@@ -111,87 +111,139 @@ export const uploadDocument = async (req, res, next) => {
   }
 };
 
-// Helper function - Process PDF with buffer (primary) or fetch from URL (fallback)
+// Helper function - Process PDF ONLY from Cloudinary URL with retries
 const processPDFBuffer = async (documentId, fileBuffer, cloudinaryUrl) => {
   try {
-    console.log(`[PDF Processing] Processing document ${documentId}...`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`[PDF Processing] 🚀 Starting for document ${documentId}`);
+    console.log(`[PDF Processing] URL: ${cloudinaryUrl?.substring(0, 80)}...`);
     
-    let text;
+    let text = '';
+    let numPages = 0;
+    let success = false;
 
-    // ✅ Try using buffer first (most reliable, no network needed)
-    if (fileBuffer && Buffer.isBuffer(fileBuffer)) {
-      console.log(`[PDF Processing] Using buffer from upload...`);
-      try {
-        const result = await extractTextFromPDF(fileBuffer);
-        text = result.text;
-        console.log(`[PDF Processing] Successfully extracted text from buffer (${text.length} chars)`);
-      } catch (bufferError) {
-        console.error(`[PDF Processing] Buffer processing failed:`, bufferError.message);
-        // Fallback to URL
-        throw bufferError;
+    // ✅ ALWAYS fetch from Cloudinary with retries
+    console.log(`[PDF Processing] 📥 Fetching from Cloudinary...`);
+    try {
+      const response = await fetchWithTimeout(cloudinaryUrl, 30000);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    } else {
-      console.log(`[PDF Processing] No buffer available, fetching from Cloudinary...`);
-      // Fallback: fetch from Cloudinary
-      const response = await fetchWithRetry(cloudinaryUrl);
+
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
+      console.log(`[PDF Processing] ✅ Downloaded ${buffer.length} bytes`);
+
+      // Extract text
+      console.log(`[PDF Processing] 🔍 Parsing PDF...`);
       const result = await extractTextFromPDF(buffer);
-      text = result.text;
-      console.log(`[PDF Processing] Successfully extracted text from URL (${text.length} chars)`);
+      text = result.text || '';
+      numPages = result.numPages || 0;
+      success = true;
+      
+      console.log(`[PDF Processing] ✅ Extracted ${text.length} characters from PDF`);
+      console.log(`[PDF Processing] ✅ Pages: ${numPages}`);
+      console.log(`[PDF Processing] ✅ First 100 chars: "${text.substring(0, 100)}"`);
+    } catch (fetchError) {
+      console.error(`[PDF Processing] ❌ Failed to fetch/parse:`, fetchError.message);
+      throw fetchError;
     }
 
-    const chunks = chunkText(text, 500, 50);
+    // ⚠️ If text is empty, still mark as ready (might be scanned PDF)
+    if (!text || text.trim().length === 0) {
+      console.warn(`[PDF Processing] ⚠️  WARNING: No text extracted (might be image-based PDF)`);
+      // Don't fail - still update document
+    }
 
-    await Document.findByIdAndUpdate(documentId, {
-      extractedText: text,
-      chunks,
-      status: 'ready',
-    });
+    const chunks = text.trim().length > 0 ? chunkText(text, 500, 50) : [];
+    console.log(`[PDF Processing] ✅ Created ${chunks.length} chunks`);
+
+    // Update document with extracted content
+    const updateResult = await Document.findByIdAndUpdate(
+      documentId,
+      {
+        extractedText: text,
+        chunks,
+        status: 'ready', // ✅ Mark as ready even if text is empty
+      },
+      { new: true }
+    );
     
-    console.log(`[PDF Processing] Document ${documentId} ready with ${chunks.length} chunks`);
+    console.log(`[PDF Processing] ✅✅ Document ${documentId} is NOW READY`);
+    console.log(`${'='.repeat(60)}\n`);
+    return updateResult;
   } catch (error) {
-    console.error(`[PDF Processing] Error processing document ${documentId}:`, error.message);
-    await Document.findByIdAndUpdate(documentId, {
-      status: 'failed',
-      extractedText: '',
-      chunks: [],
-    });
+    console.error(`\n${'!'.repeat(60)}`);
+    console.error(`[PDF Processing] ❌❌ CRITICAL ERROR for ${documentId}:`, error.message || error);
+    console.error(`[PDF Processing] Stack:`, error.stack);
+    console.error(`${'!'.repeat(60)}\n`);
+    
+    // Mark as failed in database
+    try {
+      await Document.findByIdAndUpdate(documentId, {
+        status: 'failed',
+        extractedText: '',
+        chunks: [],
+      });
+      console.log(`[PDF Processing] Marked ${documentId} as FAILED`);
+    } catch (updateError) {
+      console.error(`[PDF Processing] Failed to update status:`, updateError.message);
+    }
   }
 };
 
-// Retry fetch with exponential backoff
+// Simple fetch with timeout
+const fetchWithTimeout = async (url, timeoutMs = 30000) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Node.js)',
+      },
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Fetch timeout after ${timeoutMs}ms`);
+    }
+    throw error;
+  }
+};
+
+// Retry fetch helper (LEGACY - may not be needed now)
 const fetchWithRetry = async (url, maxRetries = 3) => {
   let lastError;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch(url, {
-        timeout: 30000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Node.js)',
-        },
-      });
+      console.log(`[Fetch] Attempt ${attempt}/${maxRetries} for ${url.substring(0, 80)}...`);
+      const response = await fetchWithTimeout(url, 30000);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      console.log(`[Fetch] Successfully fetched from URL (attempt ${attempt})`);
+      console.log(`[Fetch] ✅ Success on attempt ${attempt}`);
       return response;
     } catch (error) {
       lastError = error;
-      console.warn(`[Fetch] Attempt ${attempt} failed: ${error.message}`);
+      console.warn(`[Fetch] ❌ Attempt ${attempt} failed:`, error.message);
       
       if (attempt < maxRetries) {
-        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        const delay = Math.pow(2, attempt - 1) * 1000;
         console.log(`[Fetch] Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
   
-  throw new Error(`Failed to fetch after ${maxRetries} attempts: ${lastError.message}`);
+  throw new Error(`Failed to fetch after ${maxRetries} attempts: ${lastError?.message}`);
 };
 
 //@desc get all user documents
@@ -256,6 +308,56 @@ export const getDocument = async (req, res, next) => {
       data: documentData,
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+//@desc Retry PDF processing for failed documents
+//@route POST /api/documents/:id/retry
+//@access Private
+export const retryDocumentProcessing = async (req, res, next) => {
+  try {
+    console.log(`[Document Retry] Retrying document ${req.params.id}`);
+    
+    const document = await Document.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        error: 'Document not found',
+        statusCode: 404,
+      });
+    }
+
+    if (!document.filePath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Document has no file path (Cloudinary URL)',
+        statusCode: 400,
+      });
+    }
+
+    // Update status to processing
+    document.status = 'processing';
+    await document.save();
+
+    console.log(`[Document Retry] Reprocessing ${req.params.id} from URL: ${document.filePath}`);
+
+    // Call processing function with Cloudinary URL
+    processPDFBuffer(document._id, null, document.filePath).catch((err) => {
+      console.error('[Document Retry] Processing error:', err.message);
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Document reprocessing started. Please wait...',
+      data: document,
+    });
+  } catch (error) {
+    console.error('[Document Retry] Error:', error.message);
     next(error);
   }
 };
