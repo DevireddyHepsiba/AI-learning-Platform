@@ -24,6 +24,12 @@ const documentSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Cloudinary resource identifier - used for deletions
+    cloudinaryPublicId: {
+      type: String,
+      default: null,
+    },
+
     fileSize: {
       type: Number,
       required: true,
