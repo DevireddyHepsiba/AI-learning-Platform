@@ -1,21 +1,13 @@
 // backend/config/multer.js
 
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "./cloudinary.js";
 
 /**
- * Cloudinary Storage for unsigned uploads (no API key required)
- * Files go directly to Cloudinary without server processing
+ * Memory storage - keep file in RAM for processing
+ * We'll handle Cloudinary upload manually in the controller
+ * This allows us to process the PDF AND upload to Cloudinary
  */
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "ai-learning-documents",
-    resource_type: "auto",
-    use_filename: true,
-  },
-});
+const storage = multer.memoryStorage();
 
 // File filter - only PDFs
 const fileFilter = (req, file, cb) => {

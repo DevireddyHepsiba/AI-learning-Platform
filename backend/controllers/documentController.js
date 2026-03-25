@@ -3,6 +3,7 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
+import cloudinary from '../config/cloudinary.js';
 
 const resolvePublicBaseUrl = (req) => {
   const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
@@ -73,15 +74,50 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    // req.file.path is the Cloudinary URL (from CloudinaryStorage)
-    // req.file.buffer is available for processing BEFORE Cloudinary upload
-    const cloudinaryUrl = req.file.path; // ✅ Cloudinary URL from multer-storage-cloudinary
-    const fileBuffer = req.file.buffer;   // ✅ Keep buffer for PDF processing
+    // Get file buffer from memory storage
+    const fileBuffer = req.file.buffer;
+    
+    if (!fileBuffer || fileBuffer.length === 0) {
+      console.log('[Document Upload] ERROR: No file buffer');
+      return res.status(400).json({
+        success: false,
+        error: 'File buffer is empty',
+        statusCode: 400,
+      });
+    }
 
-    console.log('[Document Upload] Cloudinary URL:', cloudinaryUrl);
-    console.log('[Document Upload] File buffer available:', !!fileBuffer);
+    console.log('[Document Upload] File buffer received:', fileBuffer.length, 'bytes');
 
-    // Create database record immediately
+    // Upload to Cloudinary
+    let cloudinaryUrl = null;
+    try {
+      console.log('[Document Upload] 📤 Uploading to Cloudinary...');
+      const uploadStream = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'ai-learning-documents',
+            resource_type: 'auto',
+            format: 'pdf',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        stream.end(fileBuffer);
+      });
+      cloudinaryUrl = uploadStream.secure_url;
+      console.log('[Document Upload] ✅ Uploaded to Cloudinary:', cloudinaryUrl);
+    } catch (uploadError) {
+      console.error('[Document Upload] ❌ Cloudinary upload failed:', uploadError.message);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to upload file to cloud storage',
+        statusCode: 500,
+      });
+    }
+
+    // Create database record with Cloudinary URL
     const document = await Document.create({
       userId: req.user._id,
       title,
@@ -91,9 +127,9 @@ export const uploadDocument = async (req, res, next) => {
       status: 'processing',
     });
 
-    console.log('[Document Upload] Document created:', document._id);
+    console.log('[Document Upload] ✅ Document created:', document._id);
 
-    // Process PDF asynchronously using buffer (most reliable)
+    // Process PDF asynchronously using buffer
     processPDFBuffer(document._id, fileBuffer, cloudinaryUrl).catch((err) => {
       console.error('[Document Upload] PDF processing error:', err.message);
     });
