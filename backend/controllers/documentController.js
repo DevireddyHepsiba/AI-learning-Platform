@@ -3,6 +3,40 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
+import fs from 'fs/promises';
+import fsSync from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure uploads/documents directory exists
+const uploadsDir = path.join(__dirname, '..', 'uploads', 'documents');
+try {
+  if (!fsSync.existsSync(uploadsDir)) {
+    fsSync.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (err) {
+  console.error('[Init] Failed to create uploads directory:', err.message);
+}
+
+const resolvePublicBaseUrl = (req) => {
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
+    .split(',')[0]
+    .trim();
+  const protocol = forwardedProto || req.protocol || 'http';
+  const requestHost = req.get('host');
+
+  return (
+    process.env.BACKEND_PUBLIC_URL ||
+    process.env.PUBLIC_BASE_URL ||
+    (requestHost ? `${protocol}://${requestHost}` : '') ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://ai-learning-platform-c2jg.onrender.com'
+      : `http://localhost:${process.env.PORT || 8000}`)
+  );
+};
 
 const normalizeDocumentFilePath = (filePath, req) => {
   const value = String(filePath || '').trim();
@@ -14,10 +48,7 @@ const normalizeDocumentFilePath = (filePath, req) => {
 
   try {
     const pathname = new URL(value).pathname;
-    const protocol = req.protocol || 'http';
-    const requestHost = req.get('host');
-    const baseUrl = requestHost ? `${protocol}://${requestHost}` : '';
-    return `${baseUrl}${pathname}`;
+    return `${resolvePublicBaseUrl(req)}${pathname}`;
   } catch {
     return value;
   }
@@ -27,13 +58,18 @@ const normalizeDocumentFilePath = (filePath, req) => {
 //@route POST /api/document/upload
 //@access private
 export const uploadDocument = async (req, res, next) => {
+  let savedFilePath = null;
+  
   try {
-    const file = req.file;
+    console.log('[Document Upload] Request received');
+    console.log('[Document Upload] req.file:', req.file ? { fieldname: req.file.fieldname, originalname: req.file.originalname, size: req.file.size } : 'NO FILE');
+    console.log('[Document Upload] req.body:', req.body);
 
-    if (!file) {
+    if (!req.file) {
+      console.log('[Document Upload] ERROR: No file provided');
       return res.status(400).json({
         success: false,
-        message: "No file uploaded",
+        error: 'Please upload a PDF file',
         statusCode: 400,
       });
     }
@@ -41,61 +77,88 @@ export const uploadDocument = async (req, res, next) => {
     const { title } = req.body;
 
     if (!title) {
+      console.log('[Document Upload] ERROR: No title provided');
       return res.status(400).json({
         success: false,
-        message: "Please provide a document title",
+        error: 'Please provide a document title',
         statusCode: 400,
       });
     }
 
     if (!req.user || !req.user._id) {
+      console.log('[Document Upload] ERROR: User not authenticated');
       return res.status(401).json({
         success: false,
-        message: "User not authenticated",
+        error: 'User not authenticated',
         statusCode: 401,
       });
     }
 
-    // file.path is provided by CloudinaryStorage (Cloudinary URL)
+    // Ensure directory exists
+    if (!fsSync.existsSync(uploadsDir)) {
+      fsSync.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substr(2, 9);
+    const filename = `${timestamp}-${randomId}-${req.file.originalname}`;
+    savedFilePath = path.join(uploadsDir, filename);
+
+    // Save file buffer to disk
+    console.log('[Document Upload] Saving file to disk:', savedFilePath);
+    await fs.writeFile(savedFilePath, req.file.buffer);
+    console.log('[Document Upload] File saved successfully');
+
+    // Create database record
+    const baseUrl = resolvePublicBaseUrl(req);
+    const fileUrl = `${baseUrl}/uploads/documents/${filename}`;
+
+    console.log('[Document Upload] Creating document record...');
     const document = await Document.create({
       userId: req.user._id,
       title,
-      fileName: file.originalname,
-      filePath: file.path, // ✅ Cloudinary URL
-      fileSize: file.size,
-      status: "processing",
+      fileName: req.file.originalname,
+      filePath: fileUrl,
+      fileSize: req.file.size,
+      status: 'processing',
     });
 
+    console.log('[Document Upload] Document created:', document._id);
+
     // Process PDF asynchronously
-    processPDFFromUrl(document._id, file.path, file.buffer).catch((err) => {
+    processPDF(document._id, savedFilePath).catch((err) => {
       console.error('[Document Upload] PDF processing error:', err.message);
     });
 
+    console.log('[Document Upload] Success - returning 201');
     res.status(201).json({
       success: true,
       data: document,
-      message: "Document uploaded successfully. Processing in progress...",
+      message: 'Document uploaded successfully. Processing in progress...',
     });
   } catch (error) {
-    console.error('[Document Upload] Error:', error.message);
+    console.error('[Document Upload] CAUGHT ERROR:', error.message || error);
+    console.error('[Document Upload] ERROR STACK:', error.stack);
+    
+    // Clean up saved file if upload failed
+    if (savedFilePath) {
+      try {
+        await fs.unlink(savedFilePath);
+        console.log('[Document Upload] Cleaned up partial file');
+      } catch (cleanupErr) {
+        console.error('[Document Upload] Failed to cleanup file:', cleanupErr.message);
+      }
+    }
+    
     next(error);
   }
 };
 
-// Helper function - Process PDF from Cloudinary URL or buffer
-const processPDFFromUrl = async (documentId, fileUrl, fileBuffer) => {
+// Helper function - Process PDF from file path
+const processPDF = async (documentId, filePath) => {
   try {
-    // Use buffer if available, otherwise fetch from URL
-    let text;
-    if (fileBuffer) {
-      const result = await extractTextFromPDF(fileBuffer);
-      text = result.text;
-    } else {
-      const response = await fetch(fileUrl);
-      const buffer = await response.buffer();
-      const result = await extractTextFromPDF(buffer);
-      text = result.text;
-    }
+    const { text } = await extractTextFromPDF(filePath);
 
     const chunks = chunkText(text, 500, 50);
 

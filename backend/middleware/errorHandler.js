@@ -1,13 +1,11 @@
 const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || err.status || 500;
   
-  // 🔥 Log the FULL error object for debugging
-  console.error("🔥 [REAL ERROR]:", err);
-  console.error("🔥 [ERROR DETAILS]", {
-    message: err.message || "No message",
-    statusCode: statusCode,
-    stack: err.stack || "No stack trace",
-    errorName: err.name || "Unknown",
+  // Log the full error server-side (never send to client)
+  console.error("[ERROR]", {
+    message: err.message,
+    status: statusCode,
+    stack: err.stack,
   });
 
   // NEVER expose sensitive error details to client
