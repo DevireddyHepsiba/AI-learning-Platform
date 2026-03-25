@@ -42,7 +42,49 @@
 
 // utils/pdfParser.js
 
-import pdf from "pdf-parse";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
+
+/*
+ * Extract text from PDF buffer
+ * @param {Buffer} buffer
+ * @returns {Promise<{text: string, numPages: number}>}
+ */
+export const extractTextFromPDF = async (buffer) => {
+  try {
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Buffer is empty or invalid');
+    }
+
+    console.log(`[PDF Parse] Processing buffer of ${buffer.length} bytes`);
+    
+    // Parse PDF
+    const data = await pdfParse(buffer);
+
+    console.log(`[PDF Parse] ✅ PDF parsed successfully`);
+    console.log(`[PDF Parse] Pages: ${data.numpages}`);
+    console.log(`[PDF Parse] Text length: ${data.text?.length || 0}`);
+    console.log(`[PDF Parse] First 100 chars: ${data.text?.substring(0, 100)}`);
+
+    if (!data.text || data.text.trim().length === 0) {
+      console.warn(`[PDF Parse] ⚠️ WARNING: PDF has no extractable text!`);
+      return {
+        text: data.text || '',
+        numPages: data.numpages || 0,
+        info: data.info || {},
+      };
+    }
+
+    return {
+      text: data.text,
+      numPages: data.numpages,
+      info: data.info,
+    };
+  } catch (error) {
+    console.error(`[PDF Parse] ❌ ERROR:`, error.message || error);
+    console.error(`[PDF Parse] Stack:`, error.stack);
+    throw error;
+  }
+};
 
 /*
  * Extract text from PDF buffer

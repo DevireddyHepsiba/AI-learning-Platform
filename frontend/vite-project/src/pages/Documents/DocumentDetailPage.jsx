@@ -405,7 +405,7 @@ const DocumentDetailPage = () => {
             ) : fileUrl ? (
               <iframe
                 title="Document Viewer"
-                src={fileUrl}
+                src={`${fileUrl}#toolbar=0`}
                 className="w-full h-[70vh] rounded-xl border border-slate-200"
                 onError={() => {
                   console.error("iframe error loading:", fileUrl);
