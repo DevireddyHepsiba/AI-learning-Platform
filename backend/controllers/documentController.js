@@ -3,32 +3,27 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
-
-const normalizeDocumentFilePath = (filePath, req) => {
-  const value = String(filePath || '').trim();
-  if (!value) return value;
-
-  if (!/^https?:\/\/localhost:\d+/i.test(value)) {
-    return value;
-  }
-
-  try {
-    const pathname = new URL(value).pathname;
-    const protocol = req.protocol || 'http';
-    const requestHost = req.get('host');
-    const baseUrl = requestHost ? `${protocol}://${requestHost}` : '';
-    return `${baseUrl}${pathname}`;
-  } catch {
-    return value;
-  }
-};
+import axios from 'axios';
 
 //@desc upload pdf document
 //@route POST /api/document/upload
 //@access private
 export const uploadDocument = async (req, res, next) => {
   try {
+    // 🔍 DEBUG: Log environment configuration
+    console.log('[Upload DEBUG] CLOUD_NAME:', process.env.CLOUD_NAME ? '✅ LOADED' : '❌ UNDEFINED');
+    console.log('[Upload DEBUG] CLOUD_API_KEY:', process.env.CLOUD_API_KEY ? '✅ LOADED' : '❌ UNDEFINED');
+    console.log('[Upload DEBUG] CLOUD_API_SECRET:', process.env.CLOUD_API_SECRET ? '✅ LOADED' : '❌ UNDEFINED');
+    
     const file = req.file;
+    
+    // 🔍 DEBUG: Log file info
+    console.log('[Upload DEBUG] File received:', file ? {
+      originalname: file.originalname,
+      path: file.path ? '✅ HAS PATH' : '❌ NO PATH',
+      size: file.size,
+      fieldname: file.fieldname,
+    } : '❌ NO FILE');
 
     if (!file) {
       return res.status(400).json({
@@ -57,6 +52,8 @@ export const uploadDocument = async (req, res, next) => {
     }
 
     // file.path is provided by CloudinaryStorage (Cloudinary URL)
+    console.log('[Upload DEBUG] Cloudinary URL:', file.path);
+    
     const document = await Document.create({
       userId: req.user._id,
       title,
@@ -66,9 +63,11 @@ export const uploadDocument = async (req, res, next) => {
       status: "processing",
     });
 
+    console.log('[Upload DEBUG] Document created:', document._id);
+
     // Process PDF asynchronously
-    processPDFFromUrl(document._id, file.path, file.buffer).catch((err) => {
-      console.error('[Document Upload] PDF processing error:', err.message);
+    processPDFFromUrl(document._id, file.path).catch((err) => {
+      console.error('🔥 [PDF Processing Async Error]:', err);
     });
 
     res.status(201).json({
@@ -77,38 +76,51 @@ export const uploadDocument = async (req, res, next) => {
       message: "Document uploaded successfully. Processing in progress...",
     });
   } catch (error) {
-    console.error('[Document Upload] Error:', error.message);
+    console.error('🔥 [Upload Controller Error]:', error);
     next(error);
   }
 };
 
-// Helper function - Process PDF from Cloudinary URL or buffer
-const processPDFFromUrl = async (documentId, fileUrl, fileBuffer) => {
+// Helper function - Process PDF from Cloudinary URL using axios
+const processPDFFromUrl = async (documentId, fileUrl) => {
   try {
-    // Use buffer if available, otherwise fetch from URL
-    let text;
-    if (fileBuffer) {
-      const result = await extractTextFromPDF(fileBuffer);
-      text = result.text;
-    } else {
-      const response = await fetch(fileUrl);
-      const buffer = await response.buffer();
-      const result = await extractTextFromPDF(buffer);
-      text = result.text;
-    }
+    console.log('[PDF Processing DEBUG] Starting for URL:', fileUrl);
+    
+    const response = await axios.get(fileUrl, {
+      responseType: 'arraybuffer',
+    });
+    
+    console.log('[PDF Processing DEBUG] Axios response status:', response.status);
+    
+    const buffer = Buffer.from(response.data);
+    console.log('[PDF Processing DEBUG] Buffer created:', buffer.length, 'bytes');
+
+    const result = await extractTextFromPDF(buffer);
+    console.log('[PDF Processing DEBUG] Text extracted:', result.text ? result.text.substring(0, 100) + '...' : 'EMPTY');
+    
+    const text = result.text;
 
     const chunks = chunkText(text, 500, 50);
+    console.log('[PDF Processing DEBUG] Chunks created:', chunks.length);
 
     await Document.findByIdAndUpdate(documentId, {
       extractedText: text,
       chunks,
       status: 'ready',
     });
+    
+    console.log('[PDF Processing DEBUG] Document updated successfully ✅');
   } catch (error) {
-    console.error(`[PDF Processing] Error processing document ${documentId}:`, error);
+    console.error('❌ PDF PROCESS ERROR:', error.message);
+    console.error('[PDF Processing ERROR]', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+    
     await Document.findByIdAndUpdate(documentId, {
       status: 'failed',
-    });
+    }).catch(err => console.error('🔥 Failed to update document status:', err));
   }
 };
 
@@ -118,15 +130,10 @@ const processPDFFromUrl = async (documentId, fileUrl, fileBuffer) => {
 export const getDocuments = async (req, res, next) => {
   try {
     const documents = await Document.find({ userId: req.user._id });
-    const normalizedDocuments = documents.map((doc) => {
-      const documentData = doc.toObject();
-      documentData.filePath = normalizeDocumentFilePath(documentData.filePath, req);
-      return documentData;
-    });
 
     res.status(200).json({
       success: true,
-      data: normalizedDocuments,
+      data: documents,
     });
   } catch (error) {
     next(error);
@@ -164,14 +171,9 @@ export const getDocument = async (req, res, next) => {
     document.lastAccessed = Date.now();
     await document.save();
 
-    const documentData = document.toObject();
-    documentData.filePath = normalizeDocumentFilePath(documentData.filePath, req);
-    documentData.flashcardCount = flashcardCount;
-    documentData.quizCount = quizCount;
-
     res.status(200).json({
       success: true,
-      data: documentData,
+      data: document,
     });
   } catch (error) {
     next(error);
@@ -196,9 +198,7 @@ export const deleteDocument = async (req, res, next) => {
       });
     }
 
-    // delete local file (convert URL → path if needed)
-    await fs.unlink(`uploads/documents/${document.fileName}`).catch(() => {});
-
+    // Delete document from database (Cloudinary handles file cleanup)
     await document.deleteOne();
 
     res.status(200).json({
