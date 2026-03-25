@@ -8,7 +8,8 @@ import {
 } from "../controllers/documentController.js";
 
 import protect from '../middleware/auth.js';
-import upload from '../middleware/upload.js';
+import upload, { uploadPdf } from '../middleware/upload.js';
+import uploadLimiter from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 ///All routes are protected
@@ -52,7 +53,8 @@ router.post('/debug/test-url', async (req, res, next) => {
   }
 });
 
-router.post('/upload', upload.single('file'), uploadDocument);
+// Apply rate limiter and PDF upload middleware
+router.post('/upload', uploadLimiter, uploadPdf('file'), uploadDocument);
 router.post('/:id/retry', retryDocumentProcessing);  // 🔄 Retry failed processing
 router.get('/', getDocuments);
 router.get('/:id', getDocument);

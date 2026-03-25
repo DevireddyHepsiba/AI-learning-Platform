@@ -3,7 +3,8 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
-import cloudinary from '../config/cloudinary.js';
+import cloudinaryHelper from '../utils/cloudinaryHelper.js';
+import logger from '../utils/logger.js';
 
 const resolvePublicBaseUrl = (req) => {
   const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
@@ -43,10 +44,10 @@ const normalizeDocumentFilePath = (filePath, req) => {
 //@access private
 export const uploadDocument = async (req, res, next) => {
   try {
-    console.log('[Document Upload] Request received');
+    logger.info('[Document Upload] Request received');
 
     if (!req.file) {
-      console.log('[Document Upload] ERROR: No file provided');
+      logger.warn('[Document Upload] ERROR: No file provided');
       return res.status(400).json({
         success: false,
         error: 'Please upload a PDF file',
@@ -57,7 +58,7 @@ export const uploadDocument = async (req, res, next) => {
     const { title } = req.body;
 
     if (!title) {
-      console.log('[Document Upload] ERROR: No title provided');
+      logger.warn('[Document Upload] ERROR: No title provided');
       return res.status(400).json({
         success: false,
         error: 'Please provide a document title',
@@ -66,7 +67,7 @@ export const uploadDocument = async (req, res, next) => {
     }
 
     if (!req.user || !req.user._id) {
-      console.log('[Document Upload] ERROR: User not authenticated');
+      logger.warn('[Document Upload] ERROR: User not authenticated');
       return res.status(401).json({
         success: false,
         error: 'User not authenticated',
@@ -78,7 +79,7 @@ export const uploadDocument = async (req, res, next) => {
     const fileBuffer = req.file.buffer;
     
     if (!fileBuffer || fileBuffer.length === 0) {
-      console.log('[Document Upload] ERROR: No file buffer');
+      logger.warn('[Document Upload] ERROR: No file buffer');
       return res.status(400).json({
         success: false,
         error: 'File buffer is empty',
@@ -86,62 +87,48 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    console.log('[Document Upload] File buffer received:', fileBuffer.length, 'bytes');
+    logger.info('[Document Upload] File buffer received', { bytes: fileBuffer.length });
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary (with helper)
     let cloudinaryUrl = null;
+    let cloudinaryPublicId = null;
     try {
-      console.log('[Document Upload] 📤 Uploading to Cloudinary...');
-      const uploadStream = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: 'ai-learning-documents',
-            resource_type: 'raw', // ✅ PDF as raw document
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        );
-        stream.end(fileBuffer);
-      });
-      cloudinaryUrl = uploadStream.secure_url;
-      console.log('[Document Upload] ✅ Uploaded to Cloudinary:', cloudinaryUrl);
+      logger.info('[Document Upload] Uploading to Cloudinary...');
+      const uploadResult = await cloudinaryHelper.uploadBuffer(fileBuffer, { folder: 'ai-learning-documents' });
+      cloudinaryUrl = uploadResult?.secure_url || null;
+      cloudinaryPublicId = uploadResult?.public_id || null;
+      logger.info('[Document Upload] Cloudinary upload success', { url: cloudinaryUrl, publicId: cloudinaryPublicId });
     } catch (uploadError) {
-      console.error('[Document Upload] ❌ Cloudinary upload failed:', uploadError.message);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to upload file to cloud storage',
-        statusCode: 500,
-      });
+      logger.error('[Document Upload] Cloudinary upload failed', { err: uploadError.message || uploadError });
+      return res.status(500).json({ success: false, error: 'Failed to upload file to cloud storage', statusCode: 500 });
     }
 
-    // Create database record with Cloudinary URL
+    // Create database record with Cloudinary URL and public id
     const document = await Document.create({
       userId: req.user._id,
       title,
       fileName: req.file.originalname,
-      filePath: cloudinaryUrl, // ✅ Save Cloudinary URL
+      filePath: cloudinaryUrl,
+      cloudinaryPublicId,
       fileSize: req.file.size,
       status: 'processing',
     });
 
-    console.log('[Document Upload] ✅ Document created:', document._id);
+    logger.info('[Document Upload] Document created', { documentId: document._id });
 
     // Process PDF asynchronously using buffer
     processPDFBuffer(document._id, fileBuffer, cloudinaryUrl).catch((err) => {
-      console.error('[Document Upload] PDF processing error:', err.message);
+      logger.error('[Document Upload] PDF processing error', { err: err.message || err });
     });
 
-    console.log('[Document Upload] Success - returning 201');
+    logger.info('[Document Upload] Success - returning 201');
     res.status(201).json({
       success: true,
       data: document,
       message: 'Document uploaded successfully. Processing in progress...',
     });
   } catch (error) {
-    console.error('[Document Upload] CAUGHT ERROR:', error.message || error);
-    console.error('[Document Upload] ERROR STACK:', error.stack);
+    logger.error('[Document Upload] CAUGHT ERROR', { err: error.message || error, stack: error.stack });
     next(error);
   }
 };
@@ -149,16 +136,12 @@ export const uploadDocument = async (req, res, next) => {
 // Helper function - Process PDF ONLY from Cloudinary URL with retries
 const processPDFBuffer = async (documentId, fileBuffer, cloudinaryUrl) => {
   try {
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`[PDF Processing] 🚀 Starting for document ${documentId}`);
-    console.log(`[PDF Processing] URL: ${cloudinaryUrl?.substring(0, 80)}...`);
+    logger.info('[PDF Processing] Starting', { documentId, url: cloudinaryUrl?.substring(0, 80) });
     
     let text = '';
     let numPages = 0;
-    let success = false;
 
-    // ✅ ALWAYS fetch from Cloudinary with retries
-    console.log(`[PDF Processing] 📥 Fetching from Cloudinary...`);
+    logger.info('[PDF Processing] Fetching from Cloudinary', { url: cloudinaryUrl?.substring(0, 80) });
     try {
       const response = await fetchWithTimeout(cloudinaryUrl, 30000);
       
@@ -168,31 +151,28 @@ const processPDFBuffer = async (documentId, fileBuffer, cloudinaryUrl) => {
 
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      console.log(`[PDF Processing] ✅ Downloaded ${buffer.length} bytes`);
+      logger.info('[PDF Processing] Downloaded bytes', { bytes: buffer.length });
 
       // Extract text
-      console.log(`[PDF Processing] 🔍 Parsing PDF...`);
+      logger.info('[PDF Processing] Parsing PDF');
       const result = await extractTextFromPDF(buffer);
       text = result.text || '';
       numPages = result.numPages || 0;
-      success = true;
       
-      console.log(`[PDF Processing] ✅ Extracted ${text.length} characters from PDF`);
-      console.log(`[PDF Processing] ✅ Pages: ${numPages}`);
-      console.log(`[PDF Processing] ✅ First 100 chars: "${text.substring(0, 100)}"`);
+      logger.info('[PDF Processing] Extracted text length', { length: text.length, pages: numPages });
     } catch (fetchError) {
-      console.error(`[PDF Processing] ❌ Failed to fetch/parse:`, fetchError.message);
+      logger.error('[PDF Processing] Failed to fetch/parse', { err: fetchError.message || fetchError });
       throw fetchError;
     }
 
     // ⚠️ If text is empty, still mark as ready (might be scanned PDF)
     if (!text || text.trim().length === 0) {
-      console.warn(`[PDF Processing] ⚠️  WARNING: No text extracted (might be image-based PDF)`);
+      logger.warn('[PDF Processing] WARNING: No text extracted (might be image-based PDF)');
       // Don't fail - still update document
     }
 
     const chunks = text.trim().length > 0 ? chunkText(text, 500, 50) : [];
-    console.log(`[PDF Processing] ✅ Created ${chunks.length} chunks`);
+    logger.info('[PDF Processing] Created chunks', { count: chunks.length });
 
     // Update document with extracted content
     const updateResult = await Document.findByIdAndUpdate(
@@ -200,19 +180,15 @@ const processPDFBuffer = async (documentId, fileBuffer, cloudinaryUrl) => {
       {
         extractedText: text,
         chunks,
-        status: 'ready', // ✅ Mark as ready even if text is empty
+        status: 'ready', // Mark as ready even if text is empty
       },
       { new: true }
     );
     
-    console.log(`[PDF Processing] ✅✅ Document ${documentId} is NOW READY`);
-    console.log(`${'='.repeat(60)}\n`);
+    logger.info('[PDF Processing] Document is now ready', { documentId });
     return updateResult;
   } catch (error) {
-    console.error(`\n${'!'.repeat(60)}`);
-    console.error(`[PDF Processing] ❌❌ CRITICAL ERROR for ${documentId}:`, error.message || error);
-    console.error(`[PDF Processing] Stack:`, error.stack);
-    console.error(`${'!'.repeat(60)}\n`);
+    logger.error('[PDF Processing] CRITICAL ERROR', { documentId, err: error.message || error, stack: error.stack });
     
     // Mark as failed in database
     try {
@@ -221,9 +197,9 @@ const processPDFBuffer = async (documentId, fileBuffer, cloudinaryUrl) => {
         extractedText: '',
         chunks: [],
       });
-      console.log(`[PDF Processing] Marked ${documentId} as FAILED`);
+      logger.info('[PDF Processing] Marked as failed', { documentId });
     } catch (updateError) {
-      console.error(`[PDF Processing] Failed to update status:`, updateError.message);
+      logger.error('[PDF Processing] Failed to update status', { documentId, err: updateError.message || updateError });
     }
   }
 };
@@ -257,22 +233,22 @@ const fetchWithRetry = async (url, maxRetries = 3) => {
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`[Fetch] Attempt ${attempt}/${maxRetries} for ${url.substring(0, 80)}...`);
+      logger.info('[Fetch] Attempt', { attempt, url: url?.substring(0, 80) });
       const response = await fetchWithTimeout(url, 30000);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      console.log(`[Fetch] ✅ Success on attempt ${attempt}`);
+      logger.info('[Fetch] Success', { attempt });
       return response;
     } catch (error) {
       lastError = error;
-      console.warn(`[Fetch] ❌ Attempt ${attempt} failed:`, error.message);
+      logger.warn('[Fetch] Attempt failed', { attempt, err: error.message || error });
       
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt - 1) * 1000;
-        console.log(`[Fetch] Retrying in ${delay}ms...`);
+        logger.info('[Fetch] Retrying after delay', { delay });
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -352,7 +328,7 @@ export const getDocument = async (req, res, next) => {
 //@access Private
 export const retryDocumentProcessing = async (req, res, next) => {
   try {
-    console.log(`[Document Retry] Retrying document ${req.params.id}`);
+    logger.info('[Document Retry] Retrying document', { id: req.params.id });
     
     const document = await Document.findOne({
       _id: req.params.id,
@@ -379,11 +355,11 @@ export const retryDocumentProcessing = async (req, res, next) => {
     document.status = 'processing';
     await document.save();
 
-    console.log(`[Document Retry] Reprocessing ${req.params.id} from URL: ${document.filePath}`);
+    logger.info('[Document Retry] Reprocessing', { id: req.params.id, url: document.filePath });
 
     // Call processing function with Cloudinary URL
     processPDFBuffer(document._id, null, document.filePath).catch((err) => {
-      console.error('[Document Retry] Processing error:', err.message);
+      logger.error('[Document Retry] Processing error', { err: err.message || err });
     });
 
     res.status(200).json({
@@ -392,7 +368,7 @@ export const retryDocumentProcessing = async (req, res, next) => {
       data: document,
     });
   } catch (error) {
-    console.error('[Document Retry] Error:', error.message);
+    logger.error('[Document Retry] Error', { err: error.message || error });
     next(error);
   }
 };
@@ -415,8 +391,16 @@ export const deleteDocument = async (req, res, next) => {
       });
     }
 
-    // For Cloudinary: no local file to delete
-    // Cloudinary auto-manages file lifecycle
+    // If this document was stored on Cloudinary, attempt to delete the remote resource
+    if (document.cloudinaryPublicId) {
+      try {
+        await cloudinaryHelper.deleteResource(document.cloudinaryPublicId, { resource_type: 'raw' });
+        logger.info('[Document Delete] Cloudinary resource deleted', { publicId: document.cloudinaryPublicId });
+      } catch (err) {
+        logger.warn('[Document Delete] Failed to delete Cloudinary resource', { err: err.message || err });
+        // proceed to delete DB record anyway
+      }
+    }
 
     await document.deleteOne();
 

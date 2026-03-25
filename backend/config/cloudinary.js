@@ -1,7 +1,15 @@
 import { v2 as cloudinary } from "cloudinary";
 
+// Validate required env vars
+const required = ['CLOUD_NAME', 'CLOUD_API_KEY', 'CLOUD_API_SECRET'];
+const missing = required.filter((k) => !process.env[k]);
+if (missing.length > 0) {
+  console.error(`Missing Cloudinary env vars: ${missing.join(', ')}`);
+  // do not throw to avoid breaking dev machines that use different flows,
+  // but it's recommended to set these in production.
+}
+
 // Configure Cloudinary using server-side credentials.
-// Keep only supported config keys.
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
