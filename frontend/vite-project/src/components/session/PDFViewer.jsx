@@ -40,7 +40,7 @@ export default function PDFViewer({
         try {
           const currentOrigin = window.location.origin;
           if (documentUrl.startsWith(currentOrigin)) {
-            const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+            const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
             const pathname = new URL(documentUrl).pathname;
             return `${apiBase}${pathname}`;
           }
@@ -52,7 +52,7 @@ export default function PDFViewer({
     }
     
     // If it's a relative path, prepend the backend URL
-    const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
     
     // Handle various path formats
     if (documentUrl.startsWith("/")) {

@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE ||
+  import.meta.env.VITE_API_URL ||
   `${window.location.protocol}//${window.location.hostname}:8000`;
 
 let socket = null;
