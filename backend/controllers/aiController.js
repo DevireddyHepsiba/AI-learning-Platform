@@ -286,6 +286,7 @@ export const quickClarity = async (req, res, next) => {
       });
     }
 
+    console.log("[quickClarity] Processing request...");
     const explanation = await geminiService.clarifySelection(selectedText, context || "");
 
     res.status(200).json({
@@ -294,7 +295,13 @@ export const quickClarity = async (req, res, next) => {
       message: "Clarity generated successfully",
     });
   } catch (error) {
-    next(error);
+    console.error("[quickClarity] ERROR - Message:", error?.message);
+    console.error("[quickClarity] ERROR - Full object:", JSON.stringify(error, null, 2));
+    
+    res.status(500).json({
+      success: false,
+      error: error?.message || "Failed to generate clarity explanation",
+    });
   }
 };
 

@@ -187,10 +187,13 @@ ${normalizedText.substring(0, 15000)}
    QUICK CLARITY FOR SELECTED TEXT
 ====================================================== */
 export const clarifySelection = async (selectionText, context = "") => {
-  const selection = normalizeText(selectionText).trim();
-  const ctx = normalizeText(context).trim();
+  try {
+    const selection = normalizeText(selectionText).trim();
+    const ctx = normalizeText(context).trim();
 
-  const prompt = `
+    console.log("[clarifySelection] Input - selection length:", selection.length, "context length:", ctx.length);
+
+    const prompt = `
 You are a concise study assistant.
 Explain the selected text in simple terms and include:
 1) Plain-English explanation
@@ -204,10 +207,28 @@ OPTIONAL CONTEXT:
 ${ctx || "N/A"}
 `;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+    console.log("[clarifySelection] Calling Gemini API...");
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
 
-  return extractText(response);
+    console.log("[clarifySelection] Gemini response received");
+    const result = extractText(response);
+    
+    if (!result || result.trim().length === 0) {
+      throw new Error("Gemini returned empty response");
+    }
+    
+    console.log("[clarifySelection] Success! Result length:", result.length);
+    return result;
+  } catch (apiError) {
+    console.error("[clarifySelection] API Error:", apiError?.message || apiError);
+    console.error("[clarifySelection] Error details:", {
+      message: apiError?.message,
+      status: apiError?.status,
+      code: apiError?.code,
+    });
+    throw apiError;
+  }
 };
