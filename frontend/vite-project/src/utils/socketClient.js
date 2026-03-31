@@ -94,6 +94,24 @@ export const emitPresenterState = (data) => {
 };
 
 /**
+ * Emit cursor position
+ */
+export const emitCursorMove = (data) => {
+  if (socket?.connected) {
+    socket.emit("cursor-move", data);
+  }
+};
+
+/**
+ * Emit cursor leave
+ */
+export const emitCursorLeave = (data) => {
+  if (socket?.connected) {
+    socket.emit("cursor-leave", data);
+  }
+};
+
+/**
  * Register event listeners
  */
 export const on = (event, callback) => {

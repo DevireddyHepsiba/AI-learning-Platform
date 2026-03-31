@@ -32,28 +32,22 @@ export default function PDFViewer({
   const processedDocUrl = useMemo(() => {
     if (!documentUrl) return null;
     
+    // API base URL for constructing full URLs
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    
     // If it's a data URL or full URL, use it directly
     if (documentUrl.startsWith("data:") || documentUrl.startsWith("http")) {
-      // Backward-compatibility: old sessions saved frontend-origin upload URL.
-      // Rewrite it to backend API base so it returns actual PDF bytes.
+      // Backward-compatibility: rewrite old localhost URLs or frontend URLs to use deployed API
       if (documentUrl.includes("/uploads/documents/")) {
-        try {
-          const currentOrigin = window.location.origin;
-          if (documentUrl.startsWith(currentOrigin)) {
-            const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
-            const pathname = new URL(documentUrl).pathname;
-            return `${apiBase}${pathname}`;
-          }
-        } catch {
-          // fall through to raw URL
-        }
+        // Extract pathname from the URL
+        const pathname = new URL(documentUrl).pathname;
+        // Always rewrite to use current API base (handles localhost->production transitions)
+        return `${apiBase}${pathname}`;
       }
       return documentUrl;
     }
     
     // If it's a relative path, prepend the backend URL
-    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
-    
     // Handle various path formats
     if (documentUrl.startsWith("/")) {
       return `${apiBase}${documentUrl}`;

@@ -82,8 +82,18 @@ const DocumentDetailPage = () => {
     
     if (!filePath) return "";
     
-    // If already a full URL, return as-is
+    // If already a full URL, sanitize it
     if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+      // Rewrite old localhost/frontend URLs to use current API base
+      if (filePath.includes("/uploads/documents/")) {
+        try {
+          const pathname = new URL(filePath).pathname;
+          // Use deployed API if in production, otherwise use BASE_URL
+          return `${BASE_URL}${pathname}`;
+        } catch {
+          return filePath; // If URL parsing fails, return as-is
+        }
+      }
       return filePath;
     }
     

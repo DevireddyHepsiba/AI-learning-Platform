@@ -159,7 +159,7 @@ npm run dev
 ## Default Local URLs
 
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:8000/api
+- Backend API: https://ai-learning-platform-c2jg.onrender.com/api
 - Socket Server: http://localhost:8000
 
 ## Main API Modules

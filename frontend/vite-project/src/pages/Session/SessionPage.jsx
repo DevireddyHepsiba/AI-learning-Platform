@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import PDFViewer from "../../components/session/PDFViewer";
 import HighlightLayer from "../../components/session/HighlightLayer";
+import RemoteCursorLayer from "../../components/session/RemoteCursorLayer";
 import CommentsPanel from "../../components/session/CommentsPanel";
 import NotesPanel from "../../components/session/NotesPanel";
 import InviteModal from "../../components/session/InviteModal";
@@ -16,6 +17,8 @@ import {
   emitComment,
   emitNotesUpdate,
   emitPageChange,
+  emitCursorMove,
+  emitCursorLeave,
 } from "../../utils/socketClient";
 import { prettifySnippet } from "../../utils/sessionHelpers";
 import axiosInstance from "../../utils/axiosinstance";
@@ -34,6 +37,11 @@ import {
   Highlighter,
   Upload,
 } from "lucide-react";
+
+const CURSOR_COLORS = [
+  "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
+  "#F7DC6F", "#BB8FCE", "#85C1E9", "#F8B88B", "#ABEBC6"
+];
 
 const normalize = (value = "") => String(value).replace(/\s+/g, " ").trim().toLowerCase();
 
@@ -150,17 +158,28 @@ export default function SessionPage() {
   const [mediaError, setMediaError] = useState("");
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [pdfUpdateNotice, setPdfUpdateNotice] = useState("");
+  const [remoteCursors, setRemoteCursors] = useState({});
 
   const localVideoRef = useRef(null);
   const peerConnectionsRef = useRef({});
   const stableUserIdRef = useRef("");
   const pdfInputRef = useRef(null);
+  const cursorThrottleRef = useRef(null);
+  const cursorColorMapRef = useRef(new Map());
 
   const iceConfig = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
   };
 
   const selfUser = currentUser || user;
+
+  const getOrAssignCursorColor = (socketId) => {
+    if (!cursorColorMapRef.current.has(socketId)) {
+      const randomColor = CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)];
+      cursorColorMapRef.current.set(socketId, randomColor);
+    }
+    return cursorColorMapRef.current.get(socketId);
+  };
 
   const resolveSessionUserId = useCallback((candidateUser) => {
     const explicitId = toId(candidateUser?.id || candidateUser?._id);
@@ -533,6 +552,34 @@ export default function SessionPage() {
       }
     };
 
+    const handleRemoteCursorMove = (data) => {
+      const { socketId, userId, username, x, y, page } = data;
+      // Only show cursors on same page
+      if (Number(page) !== currentPage) return;
+
+      setRemoteCursors((prev) => ({
+        ...prev,
+        [socketId]: {
+          socketId,
+          userId,
+          username,
+          x,
+          y,
+          page,
+          color: getOrAssignCursorColor(socketId),
+        },
+      }));
+    };
+
+    const handleRemoteCursorLeave = (data) => {
+      const { socketId } = data;
+      setRemoteCursors((prev) => {
+        const copy = { ...prev };
+        delete copy[socketId];
+        return copy;
+      });
+    };
+
     on("highlight", handleHighlightSocket);
     on("receive-comment", handleCommentSocket);
     on("update-notes", handleNotesUpdate);
@@ -547,6 +594,8 @@ export default function SessionPage() {
     on("webrtc-answer", handleWebRtcAnswer);
     on("webrtc-ice-candidate", handleIceCandidate);
     on("session-document-updated", handleSessionDocumentUpdated);
+    on("remote-cursor-move", handleRemoteCursorMove);
+    on("remote-cursor-leave", handleRemoteCursorLeave);
     on("error", handleSocketError);
 
     // Ensure current presence is synced even if initial join happened before listeners were attached.
@@ -573,9 +622,53 @@ export default function SessionPage() {
       off("webrtc-answer", handleWebRtcAnswer);
       off("webrtc-ice-candidate", handleIceCandidate);
       off("session-document-updated", handleSessionDocumentUpdated);
+      off("remote-cursor-move", handleRemoteCursorMove);
+      off("remote-cursor-leave", handleRemoteCursorLeave);
       off("error", handleSocketError);
     };
-  }, [session, currentUser, user, guestName, sessionId, selfUser, resolveSessionUserId, createPeerConnection, closePeerConnection, localStream, applyRemoteOfferSafely]);
+  }, [session, currentUser, user, guestName, sessionId, selfUser, currentPage, resolveSessionUserId, createPeerConnection, closePeerConnection, localStream, applyRemoteOfferSafely]);
+
+  useEffect(() => {
+    if (!sessionId || !selfUser) return;
+
+    const handleMouseMove = (e) => {
+      const now = Date.now();
+      if (cursorThrottleRef.current && now - cursorThrottleRef.current < 100) {
+        return; // Throttle to 100ms
+      }
+      cursorThrottleRef.current = now;
+
+      const socket = getSocket();
+      if (socket?.connected) {
+        emitCursorMove({
+          sessionId,
+          userId: resolveSessionUserId(selfUser),
+          username: resolveUsername(selfUser, guestName),
+          x: e.clientX,
+          y: e.clientY,
+          page: currentPage,
+        });
+      }
+    };
+
+    const handleMouseLeave = () => {
+      const socket = getSocket();
+      if (socket?.connected) {
+        emitCursorLeave({
+          sessionId,
+        });
+      }
+      setRemoteCursors({});
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [sessionId, selfUser, guestName, currentPage, resolveSessionUserId]);
 
   useEffect(() => {
     const video = localVideoRef.current;
@@ -1223,6 +1316,8 @@ export default function SessionPage() {
             sessionId={sessionId}
             username={resolveUsername(currentUser || user, guestName)}
           />
+
+          <RemoteCursorLayer remoteCursors={remoteCursors} />
         </div>
 
         <div className="w-96 flex flex-col gap-4 overflow-hidden">
