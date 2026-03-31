@@ -45,15 +45,15 @@ export default function NotesPanel({
   return (
     <div className="flex flex-col h-full bg-white border-l border-gray-200">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100">
-        <div className="flex items-center gap-2">
-          <FileText size={18} className="text-green-600" />
-          <h3 className="font-semibold text-gray-900">Shared Notes</h3>
+      <div className="p-3 md:p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100">
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText size={18} className="text-green-600 flex-shrink-0" />
+          <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">Shared Notes</h3>
         </div>
         <button
           onClick={handleCopy}
           title="Copy to clipboard"
-          className="p-2 hover:bg-green-200 rounded-lg transition text-green-600"
+          className="p-2 hover:bg-green-200 rounded-lg transition text-green-600 flex-shrink-0"
         >
           {copied ? (
             <Check size={18} className="text-green-600" />
@@ -64,8 +64,8 @@ export default function NotesPanel({
       </div>
 
       {/* User indicator */}
-      <div className="px-4 py-2 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
-        You are editing as <span className="font-semibold">{username}</span>
+      <div className="px-3 md:px-4 py-2 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
+        You are editing as <span className="font-semibold truncate">{username}</span>
       </div>
 
       {/* Notes Editor */}
@@ -74,11 +74,11 @@ export default function NotesPanel({
         onChange={handleChange}
         disabled={isLoading}
         placeholder="📝 Type your notes here... All edits are shared in real-time with others in this session."
-        className="flex-1 p-4 text-sm text-gray-900 placeholder:text-gray-500 caret-gray-900 resize-none border-0 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-inset disabled:bg-gray-100"
+        className="flex-1 p-3 md:p-4 text-xs md:text-sm text-gray-900 placeholder:text-gray-500 caret-gray-900 resize-none border-0 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-inset disabled:bg-gray-100"
       />
 
       {/* Footer */}
-      <div className="px-4 py-3 text-xs text-gray-500 border-t border-gray-200 bg-gray-50">
+      <div className="px-3 md:px-4 py-3 text-xs text-gray-500 border-t border-gray-200 bg-gray-50">
         {isLoading ? (
           <span>⏳ Syncing...</span>
         ) : (
