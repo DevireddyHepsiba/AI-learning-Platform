@@ -522,6 +522,38 @@ io.on("connection", (socket) => {
   });
 
   /**
+   * User moves cursor in PDF session
+   * Payload: { sessionId, userId, username, x, y, page }
+   */
+  socket.on("cursor-move", (data) => {
+    const { sessionId, userId, username, x, y, page } = data || {};
+    if (!sessionId || !userId || !username) return;
+
+    // Broadcast cursor position to all others in room (except sender)
+    socket.to(sessionId).emit("remote-cursor-move", {
+      socketId: socket.id,
+      userId: String(userId),
+      username,
+      x: Math.round(x),
+      y: Math.round(y),
+      page: Number(page),
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * User leaves (cursor cleanup)
+   */
+  socket.on("cursor-leave", (data) => {
+    const { sessionId } = data || {};
+    if (!sessionId) return;
+
+    socket.to(sessionId).emit("remote-cursor-leave", {
+      socketId: socket.id,
+    });
+  });
+
+  /**
    * User disconnects
    */
   socket.on("disconnect", () => {

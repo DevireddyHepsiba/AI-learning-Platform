@@ -30,7 +30,18 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
+    // Determine base URL: use environment variable if set (for production), otherwise derive from request or localhost
+    let baseUrl;
+    if (process.env.API_BASE_URL) {
+      baseUrl = process.env.API_BASE_URL;
+    } else if (process.env.NODE_ENV === 'production') {
+      // For production without explicit API_BASE_URL, use request origin
+      baseUrl = req.protocol + '://' + req.get('host');
+    } else {
+      // Fallback for local development
+      baseUrl = `http://localhost:${process.env.PORT || 8000}`;
+    }
+    
     const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
 
     const document = await Document.create({

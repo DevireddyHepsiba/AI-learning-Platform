@@ -32,17 +32,21 @@ export default function PDFViewer({
   const processedDocUrl = useMemo(() => {
     if (!documentUrl) return null;
     
-    // API base URL for constructing full URLs
-    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    // API base URL for constructing full URLs - remove trailing slash for consistency
+    const apiBase = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "");
     
     // If it's a data URL or full URL, use it directly
     if (documentUrl.startsWith("data:") || documentUrl.startsWith("http")) {
       // Backward-compatibility: rewrite old localhost URLs or frontend URLs to use deployed API
       if (documentUrl.includes("/uploads/documents/")) {
         // Extract pathname from the URL
-        const pathname = new URL(documentUrl).pathname;
-        // Always rewrite to use current API base (handles localhost->production transitions)
-        return `${apiBase}${pathname}`;
+        try {
+          const pathname = new URL(documentUrl).pathname;
+          // Always rewrite to use current API base (handles localhost->production transitions)
+          return pathname.startsWith("/") ? `${apiBase}${pathname}` : `${apiBase}/${pathname}`;
+        } catch {
+          return documentUrl;
+        }
       }
       return documentUrl;
     }
@@ -53,7 +57,7 @@ export default function PDFViewer({
       return `${apiBase}${documentUrl}`;
     }
     
-    return `${apiBase}/uploads/${documentUrl}`;
+    return `${apiBase}/uploads/documents/${documentUrl}`;
   }, [documentUrl]);
 
   const handleDocumentLoadSuccess = ({ numPages }) => {

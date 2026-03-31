@@ -82,14 +82,17 @@ const DocumentDetailPage = () => {
     
     if (!filePath) return "";
     
+    // Base URL without trailing slash
+    const cleanBaseUrl = BASE_URL.replace(/\/$/, "");
+    
     // If already a full URL, sanitize it
     if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
       // Rewrite old localhost/frontend URLs to use current API base
       if (filePath.includes("/uploads/documents/")) {
         try {
           const pathname = new URL(filePath).pathname;
-          // Use deployed API if in production, otherwise use BASE_URL
-          return `${BASE_URL}${pathname}`;
+          // Use deployed API if in production, otherwise use BASE_URL without double slashes
+          return `${cleanBaseUrl}${pathname}`;
         } catch {
           return filePath; // If URL parsing fails, return as-is
         }
@@ -99,16 +102,16 @@ const DocumentDetailPage = () => {
     
     // If it's just a filename (no path separators), construct the path
     if (!filePath.includes("/")) {
-      return `${BASE_URL}/uploads/documents/${filePath}`;
+      return `${cleanBaseUrl}/uploads/documents/${filePath}`;
     }
     
     // If relative path, prepend BASE_URL
     if (filePath.startsWith("/")) {
-      return `${BASE_URL}${filePath}`;
+      return `${cleanBaseUrl}${filePath}`;
     }
     
     // Otherwise, assume it needs /uploads/documents/ prefix
-    return `${BASE_URL}/uploads/documents/${filePath}`;
+    return `${cleanBaseUrl}/uploads/documents/${filePath}`;
   }, [documentData]);
 
   useEffect(() => {
