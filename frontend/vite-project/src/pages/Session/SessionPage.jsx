@@ -159,6 +159,8 @@ export default function SessionPage() {
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [pdfUpdateNotice, setPdfUpdateNotice] = useState("");
   const [remoteCursors, setRemoteCursors] = useState({});
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
 
   const localVideoRef = useRef(null);
   const peerConnectionsRef = useRef({});
@@ -1213,6 +1215,28 @@ export default function SessionPage() {
             Notes
           </button>
 
+          {!showLeftSidebar && (
+            <button
+              onClick={() => setShowLeftSidebar(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-sm"
+              title="Show live participants"
+            >
+              <Users size={16} />
+              <span className="hidden sm:inline">Participants</span>
+            </button>
+          )}
+
+          {!showRightSidebar && (
+            <button
+              onClick={() => setShowRightSidebar(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-sm"
+              title="Show highlights & notes"
+            >
+              <Highlighter size={16} />
+              <span className="hidden sm:inline">Highlights</span>
+            </button>
+          )}
+
           <button
             onClick={handleExitSession}
             className="p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 transition text-slate-200 hover:text-white"
@@ -1236,12 +1260,23 @@ export default function SessionPage() {
           </div>
         )}
 
-        <aside className="w-full lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-slate-900/70 p-3 shadow-2xl backdrop-blur-xl flex flex-col max-h-48 lg:max-h-none order-2 lg:order-1">
+        <aside className={`w-full lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-slate-900/70 p-3 shadow-2xl backdrop-blur-xl flex flex-col max-h-48 lg:max-h-none order-2 lg:order-1 transition-all duration-300 ${
+          showLeftSidebar ? "opacity-100 visible" : "opacity-0 invisible w-0 p-0"
+        }`}>
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">Live Members</p>
-            <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-slate-100">
-              {remoteEntries.length + (isMediaOn ? 1 : 0)} live
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-slate-100">
+                {remoteEntries.length + (isMediaOn ? 1 : 0)} live
+              </span>
+              <button
+                onClick={() => setShowLeftSidebar(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                title="Close participants"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
@@ -1320,9 +1355,20 @@ export default function SessionPage() {
           <RemoteCursorLayer remoteCursors={remoteCursors} />
         </div>
 
-        <div className="w-full lg:w-96 flex flex-col gap-3 md:gap-4 overflow-hidden order-3 md:order-3 max-h-64 md:max-h-none">
+        <div className={`w-full lg:w-96 flex flex-col gap-3 md:gap-4 overflow-hidden order-3 md:order-3 max-h-64 md:max-h-none transition-all duration-300 ${
+          showRightSidebar ? "opacity-100 visible" : "opacity-0 invisible w-0 gap-0"
+        }`}>
           <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl p-3 md:p-4 overflow-y-auto shrink-0 max-h-32 md:max-h-1/3">
-            <h3 className="font-semibold text-slate-900 mb-2 md:mb-3 text-sm md:text-base">Highlights ({highlights.length})</h3>
+            <div className="flex items-center justify-between mb-2 md:mb-3">
+              <h3 className="font-semibold text-slate-900 text-sm md:text-base">Highlights ({highlights.length})</h3>
+              <button
+                onClick={() => setShowRightSidebar(false)}
+                className="p-1 rounded-lg hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
+                title="Close highlights panel"
+              >
+                <X size={16} />
+              </button>
+            </div>
             <div className="space-y-1 md:space-y-2 text-xs md:text-sm max-h-24 md:max-h-40 overflow-y-auto">
               {highlights.slice(0, 5).map((h, idx) => (
                 <button
