@@ -127,16 +127,19 @@ const AppShell = ({ children }) => {
         )}
 
         <main className="flex-1 flex flex-col">
-          <header className="h-12 md:h-16 lg:h-20 px-4 md:px-8 border-b border-slate-200 bg-white flex items-center justify-end gap-3 md:gap-6 sticky top-16 lg:top-0 z-10">
-            <NotificationsPanel />
+          <header className="h-14 md:h-16 lg:h-20 px-3 md:px-6 lg:px-8 border-b border-slate-200 bg-white flex items-center justify-between md:justify-end gap-4 md:gap-6 sticky top-16 lg:top-0 z-10">
+            <div className="flex-1 md:flex-none" />
+            <div className="flex items-center gap-4 md:gap-6">
+              <NotificationsPanel />
 
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="h-8 md:h-10 w-8 md:w-10 rounded-xl bg-emerald-500 text-white grid place-items-center font-semibold uppercase text-xs md:text-sm">
-                {(user?.username || "A").slice(0, 1)}
-              </div>
-              <div className="leading-tight hidden md:block">
-                <p className="font-semibold text-sm">{user?.username || "Alex"}</p>
-                <p className="text-xs text-slate-500">{user?.email || "alex@example.com"}</p>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="h-9 md:h-10 w-9 md:w-10 rounded-xl bg-emerald-500 text-white grid place-items-center font-semibold uppercase text-xs md:text-sm flex-shrink-0">
+                  {(user?.username || "A").slice(0, 1)}
+                </div>
+                <div className="leading-tight hidden md:block min-w-0">
+                  <p className="font-semibold text-xs md:text-sm truncate">{user?.username || "Alex"}</p>
+                  <p className="text-xs text-slate-500 truncate">{user?.email || "alex@example.com"}</p>
+                </div>
               </div>
             </div>
           </header>

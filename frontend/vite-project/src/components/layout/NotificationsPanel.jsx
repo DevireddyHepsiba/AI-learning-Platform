@@ -84,12 +84,12 @@ export default function NotificationsPanel() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 transition"
+        className="relative p-2 text-gray-600 hover:text-gray-900 transition flex-shrink-0"
         aria-label="Notifications"
       >
-        <Bell size={24} />
+        <Bell size={20} className="md:w-6 md:h-6" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">
+          <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -97,10 +97,10 @@ export default function NotificationsPanel() {
 
       {/* Notifications Panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+        <div className="absolute right-0 mt-2 w-screen sm:w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4">
-            <h3 className="font-bold text-gray-800">Notifications</h3>
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-3 md:p-4">
+            <h3 className="font-bold text-gray-800 text-sm md:text-base">Notifications</h3>
             {unreadCount > 0 && (
               <p className="text-xs text-gray-500">{unreadCount} unread</p>
             )}
@@ -118,21 +118,21 @@ export default function NotificationsPanel() {
               notifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`p-4 hover:bg-gray-50 transition ${
+                  className={`p-3 md:p-4 hover:bg-gray-50 transition ${
                     !notification.isRead ? "bg-blue-50" : ""
                   }`}
                 >
                   {/* Notification Content */}
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800">
+                  <div className="flex items-start justify-between gap-2 md:gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-800 text-xs md:text-sm">
                         <span className="text-blue-600">{notification.senderName}</span>{" "}
                         invited you to
                       </p>
-                      <p className="text-sm text-gray-700 font-semibold">
+                      <p className="text-xs md:text-sm text-gray-700 font-semibold truncate">
                         {notification.sessionName}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-1 truncate">
                         Document: {notification.documentName}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
@@ -148,27 +148,27 @@ export default function NotificationsPanel() {
                   <div className="flex gap-2 pt-2">
                     <button
                       onClick={() => handleJoinSession(notification.sessionId)}
-                      className="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition font-medium"
+                      className="flex-1 px-2 md:px-3 py-1 bg-blue-600 text-white text-xs md:text-sm rounded hover:bg-blue-700 transition font-medium whitespace-nowrap"
                     >
-                      Join Session
+                      Join
                     </button>
 
                     {!notification.isRead && (
                       <button
                         onClick={() => handleMarkAsRead(notification._id)}
-                        className="px-2 py-1 text-gray-600 hover:bg-gray-200 rounded transition"
+                        className="px-2 py-1 text-gray-600 hover:bg-gray-200 rounded transition flex-shrink-0"
                         title="Mark as read"
                       >
-                        <Check size={16} />
+                        <Check size={14} />
                       </button>
                     )}
 
                     <button
                       onClick={() => handleDelete(notification._id)}
-                      className="px-2 py-1 text-gray-600 hover:bg-red-100 rounded transition text-red-600"
+                      className="px-2 py-1 text-gray-600 hover:bg-red-100 rounded transition text-red-600 flex-shrink-0"
                       title="Delete"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>

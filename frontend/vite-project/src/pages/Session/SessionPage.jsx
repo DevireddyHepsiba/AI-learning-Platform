@@ -1121,53 +1121,53 @@ export default function SessionPage() {
     <div className="relative w-full h-screen flex flex-col overflow-hidden bg-slate-950 text-slate-100">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(6,182,212,0.2),transparent_32%),radial-gradient(circle_at_82%_14%,rgba(16,185,129,0.18),transparent_36%),radial-gradient(circle_at_50%_100%,rgba(251,191,36,0.16),transparent_38%)]" />
 
-      <div className="relative z-10 border-b border-white/10 bg-slate-900/65 p-4 shadow-lg backdrop-blur-xl flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="font-semibold text-slate-100">{session.sessionName || session.documentName}</h1>
+      <div className="relative z-10 border-b border-white/10 bg-slate-900/65 p-2 md:p-4 shadow-lg backdrop-blur-xl flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-4 min-w-0">
+          <div className="min-w-0">
+            <h1 className="font-semibold text-slate-100 text-sm md:text-base truncate">{session.sessionName || session.documentName}</h1>
             <p className="text-xs text-cyan-200/80">Collaborative Study Session</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10">
-            <Users size={16} className="text-cyan-200" />
-            <span className="text-sm font-medium text-cyan-100">{activeUsers.length}</span>
-            <span className="text-xs text-cyan-100/90 animate-pulse">active</span>
+        <div className="flex items-center gap-1 md:gap-2 flex-wrap justify-end">
+          <div className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 flex-shrink-0">
+            <Users size={14} className="text-cyan-200 md:w-4 md:h-4" />
+            <span className="text-xs md:text-sm font-medium text-cyan-100">{activeUsers.length}</span>
+            <span className="text-[10px] md:text-xs text-cyan-100/90 animate-pulse hidden sm:inline">active</span>
           </div>
 
           <div className="hidden md:flex items-center gap-2 max-w-xs overflow-x-auto">
-            {activeUsers.slice(0, 4).map((u) => (
+            {activeUsers.slice(0, 3).map((u) => (
               <span
                 key={`${u.socketId || u.userId}-${u.username}`}
-                className="rounded-full border border-white/20 bg-white/10 px-2 py-1 text-xs text-slate-100"
+                className="rounded-full border border-white/20 bg-white/10 px-2 py-1 text-xs text-slate-100 whitespace-nowrap"
                 title={u.username}
               >
                 {u.username}
               </span>
             ))}
-            {activeUsers.length > 4 && (
-              <span className="text-xs text-slate-300">+{activeUsers.length - 4} more</span>
+            {activeUsers.length > 3 && (
+              <span className="text-xs text-slate-300">+{activeUsers.length - 3}</span>
             )}
           </div>
 
           <button
             onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-sm"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-xs md:text-sm flex-shrink-0"
             title="Invite people to session"
           >
-            <Share2 size={16} />
-            Share
+            <Share2 size={14} className="md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Share</span>
           </button>
 
           <button
             onClick={handleClickUploadPdf}
             disabled={isUploadingPdf}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-sm disabled:opacity-60"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm disabled:opacity-60 flex-shrink-0"
             title="Upload/replace PDF for this session"
           >
-            <Upload size={16} />
-            {isUploadingPdf ? "Uploading..." : "Change PDF"}
+            <Upload size={14} className="md:w-4 md:h-4" />
+            <span className="hidden sm:inline">{isUploadingPdf ? "Uploading..." : "PDF"}</span>
           </button>
 
           <input
@@ -1180,69 +1180,70 @@ export default function SessionPage() {
 
           <button
             onClick={handleToggleAV}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition text-sm ${
+            className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg transition text-xs md:text-sm flex-shrink-0 ${
               isMediaOn ? "border border-amber-300/30 bg-amber-400/15 text-amber-100" : "border border-white/20 bg-white/10 text-slate-100 hover:bg-white/20"
             }`}
             title="Join/leave live audio and video"
           >
-            {isMediaOn ? "Leave AV" : "Join AV"}
+            <span className="hidden sm:inline">{isMediaOn ? "Leave" : "Join"} AV</span>
+            <span className="sm:hidden text-xs">{isMediaOn ? "✓" : "○"}</span>
           </button>
 
           <button
             onClick={() => setMicOn((v) => !v)}
             disabled={!isMediaOn}
-            className="p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40"
+            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 flex-shrink-0"
             title="Toggle microphone"
           >
-            {micOn ? <Mic size={16} /> : <MicOff size={16} />}
+            {micOn ? <Mic size={14} className="md:w-4 md:h-4" /> : <MicOff size={14} className="md:w-4 md:h-4" />}
           </button>
 
           <button
             onClick={() => setCamOn((v) => !v)}
             disabled={!isMediaOn}
-            className="p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40"
+            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 flex-shrink-0"
             title="Toggle camera"
           >
-            {camOn ? <Camera size={16} /> : <CameraOff size={16} />}
+            {camOn ? <Camera size={14} className="md:w-4 md:h-4" /> : <CameraOff size={14} className="md:w-4 md:h-4" />}
           </button>
 
           <button
             onClick={handleDownloadNotes}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-indigo-300/30 bg-indigo-400/10 text-indigo-100 hover:bg-indigo-400/20 transition text-sm"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-indigo-300/30 bg-indigo-400/10 text-indigo-100 hover:bg-indigo-400/20 transition text-xs md:text-sm flex-shrink-0"
             title="Download session notes"
           >
-            <Download size={16} />
-            Notes
+            <Download size={14} className="md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Notes</span>
           </button>
 
           {!showLeftSidebar && (
             <button
               onClick={() => setShowLeftSidebar(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-sm"
+              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm flex-shrink-0"
               title="Show live participants"
             >
-              <Users size={16} />
-              <span className="hidden sm:inline">Participants</span>
+              <Users size={14} className="md:w-4 md:h-4" />
+              <span className="hidden md:inline">Participants</span>
             </button>
           )}
 
           {!showRightSidebar && (
             <button
               onClick={() => setShowRightSidebar(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-sm"
+              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-xs md:text-sm flex-shrink-0"
               title="Show highlights & notes"
             >
-              <Highlighter size={16} />
-              <span className="hidden sm:inline">Highlights</span>
+              <Highlighter size={14} className="md:w-4 md:h-4" />
+              <span className="hidden md:inline">Highlights</span>
             </button>
           )}
 
           <button
             onClick={handleExitSession}
-            className="p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 transition text-slate-200 hover:text-white"
+            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 transition text-slate-200 hover:text-white flex-shrink-0"
             title="Exit session"
           >
-            <X size={20} />
+            <X size={18} className="md:w-5 md:h-5" />
           </button>
         </div>
       </div>
