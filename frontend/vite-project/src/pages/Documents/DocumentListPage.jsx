@@ -155,34 +155,34 @@ const DocumentListPage = () => {
 
       {isUploadOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl rounded-3xl bg-white shadow-2xl border border-slate-200 p-8 relative">
+          <div className="w-full max-w-sm md:max-w-xl rounded-3xl bg-white shadow-2xl border border-slate-200 p-5 md:p-8 relative max-h-[90vh] md:max-h-none overflow-auto">
             <button
               onClick={() => setIsUploadOpen(false)}
-              className="absolute right-5 top-5 p-2 rounded-lg hover:bg-slate-100"
+              className="absolute right-3 md:right-5 top-3 md:top-5 p-2 rounded-lg hover:bg-slate-100"
             >
               <X size={20} />
             </button>
 
-            <h2 className="text-3xl font-bold">Upload New Document</h2>
-            <p className="text-slate-500 mt-1">Add a PDF document to your library</p>
+            <h2 className="text-2xl md:text-3xl font-bold">Upload New Document</h2>
+            <p className="text-slate-500 mt-1 text-sm md:text-base">Add a PDF document to your library</p>
 
-            <form onSubmit={handleUpload} className="mt-6 space-y-5">
+            <form onSubmit={handleUpload} className="mt-4 md:mt-6 space-y-4 md:space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Document Title</label>
+                <label className="block text-xs md:text-sm font-semibold text-slate-700 mb-2">Document Title</label>
                 <input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 md:px-4 py-2 md:py-3 outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 text-sm md:text-base"
                   placeholder="React JS Concept Guide"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">PDF File</label>
-                <label className="w-full rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center cursor-pointer block hover:bg-emerald-50">
-                  <Upload className="mx-auto text-emerald-600" size={30} />
-                  <p className="mt-3 font-semibold text-emerald-700">{file ? file.name : "Choose PDF file"}</p>
-                  <p className="text-sm text-slate-500">PDF up to 10MB</p>
+                <label className="block text-xs md:text-sm font-semibold text-slate-700 mb-2">PDF File</label>
+                <label className="w-full rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 p-4 md:p-8 text-center cursor-pointer block hover:bg-emerald-50">
+                  <Upload className="mx-auto text-emerald-600" size={24} />
+                  <p className="mt-2 md:mt-3 font-semibold text-emerald-700 text-sm md:text-base">{file ? file.name : "Choose PDF file"}</p>
+                  <p className="text-xs md:text-sm text-slate-500">PDF up to 10MB</p>
                   <input
                     type="file"
                     accept="application/pdf"
