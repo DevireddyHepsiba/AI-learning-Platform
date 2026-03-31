@@ -94,24 +94,24 @@ const DocumentListPage = () => {
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">My Documents</h1>
-            <p className="text-slate-500 mt-1">Manage and organize your learning materials</p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-4xl font-bold tracking-tight">My Documents</h1>
+            <p className="text-slate-500 mt-1 text-sm md:text-base">Manage and organize your learning materials</p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col xs:flex-row gap-2 xs:gap-3 w-full sm:w-auto">
             <button
               onClick={() => setIsCreateSessionOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-md"
+              className="inline-flex items-center justify-center xs:justify-start gap-2 px-4 md:px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-md text-sm md:text-base whitespace-nowrap w-full xs:w-auto"
             >
-              <Users size={18} /> Create Study Session
+              <Users size={18} /> <span className="hidden sm:inline">Create Study</span> Session
             </button>
             <button
               onClick={() => setIsUploadOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 shadow-md"
+              className="inline-flex items-center justify-center xs:justify-start gap-2 px-4 md:px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 shadow-md text-sm md:text-base whitespace-nowrap w-full xs:w-auto"
             >
-              <Plus size={18} /> Upload Document
+              <Plus size={18} /> <span className="hidden sm:inline">Upload</span> Document
             </button>
           </div>
         </div>
@@ -141,10 +141,10 @@ const DocumentListPage = () => {
                   />
                 </div>
 
-                <h3 className="mt-5 font-semibold text-2xl leading-tight line-clamp-2">{doc.title}</h3>
-                <p className="text-slate-500 mt-2">{formatSize(doc.fileSize)}</p>
+                <h3 className="mt-5 font-semibold text-lg md:text-2xl leading-tight line-clamp-2">{doc.title}</h3>
+                <p className="text-slate-500 mt-2 text-xs md:text-sm">{formatSize(doc.fileSize)}</p>
 
-                <div className="mt-6 border-t border-slate-200 pt-4 text-sm text-slate-500">
+                <div className="mt-6 border-t border-slate-200 pt-4 text-xs md:text-sm text-slate-500">
                   Uploaded {new Date(doc.createdAt || doc.uploadDate).toLocaleString()}
                 </div>
               </button>
@@ -192,18 +192,18 @@ const DocumentListPage = () => {
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsUploadOpen(false)}
-                  className="px-8 py-3 rounded-xl border border-slate-300 font-semibold hover:bg-slate-50"
+                  className="px-6 md:px-8 py-3 rounded-xl border border-slate-300 font-semibold hover:bg-slate-50 text-sm md:text-base order-2 sm:order-1"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-8 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60"
+                  className="px-6 md:px-8 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60 text-sm md:text-base order-1 sm:order-2"
                 >
                   {uploading ? "Uploading..." : "Upload"}
                 </button>

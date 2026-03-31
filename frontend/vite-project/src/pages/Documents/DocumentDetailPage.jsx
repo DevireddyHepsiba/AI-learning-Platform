@@ -356,15 +356,15 @@ const DocumentDetailPage = () => {
       <div className="space-y-6">
         <button
           onClick={() => navigate("/documents")}
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-emerald-600"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-emerald-600 text-xs md:text-base"
         >
           <ArrowLeft size={18} /> Back to Documents
         </button>
 
-        <div className="flex items-center gap-3">
-          <h1 className="text-5xl font-bold leading-tight">{documentData.title}</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">{documentData.title}</h1>
           <span
-            className={`px-3 py-1 rounded-lg text-sm font-semibold ${
+            className={`px-3 py-1 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap flex-shrink-0 ${
               isDocumentReady ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
             }`}
           >
@@ -385,7 +385,7 @@ const DocumentDetailPage = () => {
           </div>
         )}
 
-        <div className="border-b border-slate-200 flex gap-6 text-lg">
+        <div className="border-b border-slate-200 flex gap-2 md:gap-6 text-xs md:text-lg overflow-x-auto">
           {tabs.map((tab) => {
             const labels = {
               content: "Content",
@@ -399,7 +399,7 @@ const DocumentDetailPage = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`pb-3 border-b-2 transition-colors ${
+                className={`pb-3 border-b-2 transition-colors text-sm md:text-base whitespace-nowrap ${
                   activeTab === tab
                     ? "border-emerald-500 text-emerald-600 font-semibold"
                     : "border-transparent text-slate-600 hover:text-slate-900"
@@ -495,108 +495,108 @@ const DocumentDetailPage = () => {
         )}
 
         {activeTab === "ai" && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
-            <div className="rounded-2xl border border-slate-200 p-5 flex items-center justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-xl bg-sky-100 text-sky-600 grid place-items-center"><BookOpen size={22} /></div>
-                <div>
-                  <p className="text-2xl font-semibold">Generate Summary</p>
-                  <p className="text-slate-500">Get a concise summary of the entire document.</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 space-y-4 md:space-y-6">
+            <div className="rounded-2xl border border-slate-200 p-4 md:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+              <div className="flex items-start gap-3 md:gap-4 min-w-0">
+                <div className="h-10 md:h-12 w-10 md:w-12 rounded-xl bg-sky-100 text-sky-600 grid place-items-center flex-shrink-0"><BookOpen size={20} className="md:w-6 md:h-6" /></div>
+                <div className="min-w-0">
+                  <p className="text-lg md:text-2xl font-semibold">Generate Summary</p>
+                  <p className="text-slate-500 text-sm md:text-base">Get a concise summary of the entire document.</p>
                 </div>
               </div>
               <button
                 onClick={handleGenerateSummary}
                 disabled={summaryLoading}
-                className="px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60"
+                className="px-4 md:px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60 text-sm md:text-base whitespace-nowrap flex-shrink-0 w-full sm:w-auto"
               >
                 {summaryLoading ? "Summarizing..." : "Summarize"}
               </button>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 p-5">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="h-12 w-12 rounded-xl bg-amber-100 text-amber-600 grid place-items-center"><Sparkles size={22} /></div>
-                <div>
-                  <p className="text-2xl font-semibold">Explain a Concept</p>
-                  <p className="text-slate-500">Enter a topic from this document to get detailed explanation.</p>
+            <div className="rounded-2xl border border-slate-200 p-4 md:p-5">
+              <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-4">
+                <div className="h-10 md:h-12 w-10 md:w-12 rounded-xl bg-amber-100 text-amber-600 grid place-items-center flex-shrink-0"><Sparkles size={20} className="md:w-6 md:h-6" /></div>
+                <div className="min-w-0">
+                  <p className="text-lg md:text-2xl font-semibold">Explain a Concept</p>
+                  <p className="text-slate-500 text-sm md:text-base">Enter a topic from this document to get detailed explanation.</p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
                 <input
                   value={concept}
                   onChange={(event) => setConcept(event.target.value)}
-                  className="flex-1 rounded-xl border border-slate-300 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500"
+                  className="flex-1 rounded-xl border border-slate-300 px-3 md:px-4 py-2 md:py-3 outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 text-sm md:text-base"
                   placeholder="e.g. React Hooks"
                 />
                 <button
                   onClick={handleExplainConcept}
                   disabled={conceptLoading}
-                  className="px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60"
+                  className="px-4 md:px-6 py-2 md:py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60 text-sm md:text-base whitespace-nowrap"
                 >
                   {conceptLoading ? "Explaining..." : "Explain"}
                 </button>
               </div>
 
               {conceptAnswer && (
-                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 whitespace-pre-wrap">{conceptAnswer}</div>
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 whitespace-pre-wrap text-xs md:text-sm">{conceptAnswer}</div>
               )}
             </div>
           </div>
         )}
 
         {activeTab === "flashcards" && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
             {flashcardLoading ? (
               <div className="py-14 flex items-center justify-center gap-3 text-slate-600"><Loader2 className="animate-spin" size={20} /> Loading flashcards...</div>
             ) : flashcardSets.length === 0 ? (
               <div className="py-14 text-center">
                 <Brain className="mx-auto text-emerald-500" size={36} />
-                <h3 className="mt-4 text-3xl font-semibold">No Flashcards Yet</h3>
-                <p className="text-slate-500 mt-2">Generate flashcards from your document to start learning.</p>
-                <button onClick={handleGenerateFlashcards} className="mt-6 px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Generate Flashcards</button>
+                <h3 className="mt-4 text-2xl md:text-3xl font-semibold">No Flashcards Yet</h3>
+                <p className="text-slate-500 mt-2 text-sm md:text-base">Generate flashcards from your document to start learning.</p>
+                <button onClick={handleGenerateFlashcards} className="mt-6 px-4 md:px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 text-sm md:text-base">Generate Flashcards</button>
               </div>
             ) : (
               <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-3xl font-semibold">Your Flashcard Sets</h3>
-                  <button onClick={handleGenerateFlashcards} className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Generate New Set</button>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <h3 className="text-xl md:text-3xl font-semibold">Your Flashcard Sets</h3>
+                  <button onClick={handleGenerateFlashcards} className="px-4 md:px-5 py-2 md:py-2.5 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 text-sm md:text-base whitespace-nowrap w-full sm:w-auto">Generate New Set</button>
                 </div>
 
                 {!selectedSet ? (
-                  <div className="text-slate-500">Select a set to continue.</div>
+                  <div className="text-slate-500 text-sm md:text-base">Select a set to continue.</div>
                 ) : (
-                  <div className="rounded-2xl border border-emerald-200 p-6 bg-emerald-50/30">
-                    <div className="flex items-center justify-between mb-4">
-                      <button onClick={() => setSelectedSetId(null)} className="text-slate-600 hover:text-emerald-600">Back to Sets</button>
-                      <span className="text-sm text-slate-500">{flashcardIndex + 1} / {selectedSet.cards.length}</span>
+                  <div className="rounded-2xl border border-emerald-200 p-4 md:p-6 bg-emerald-50/30">
+                    <div className="flex items-center justify-between mb-4 gap-2">
+                      <button onClick={() => setSelectedSetId(null)} className="text-slate-600 hover:text-emerald-600 text-sm md:text-base">← Back to Sets</button>
+                      <span className="text-xs md:text-sm text-slate-500">{flashcardIndex + 1} / {selectedSet.cards.length}</span>
                     </div>
 
                     {selectedCard && (
-                      <div className="rounded-2xl border border-slate-200 bg-linear-to-b from-emerald-50/40 to-white p-8 text-center">
+                      <div className="rounded-2xl border border-slate-200 bg-linear-to-b from-emerald-50/40 to-white p-4 md:p-8 text-center">
                         <div className="flashcard-stage mx-auto max-w-3xl">
                           <div className={`flashcard-flip ${showAnswer ? "is-flipped" : ""}`}>
-                            <article className="flashcard-face flashcard-front rounded-3xl border border-emerald-200 bg-linear-to-br from-emerald-100 to-cyan-100 p-8 text-left shadow-lg">
+                            <article className="flashcard-face flashcard-front rounded-3xl border border-emerald-200 bg-linear-to-br from-emerald-100 to-cyan-100 p-4 md:p-8 text-left shadow-lg">
                               <p className="inline-flex rounded-full bg-emerald-900/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-900">
                                 {selectedCard.difficulty}
                               </p>
-                              <h4 className="mt-6 text-3xl font-bold leading-tight text-slate-900">{selectedCard.question}</h4>
+                              <h4 className="mt-4 md:mt-6 text-xl md:text-3xl font-bold leading-tight text-slate-900">{selectedCard.question}</h4>
                               <button
                                 onClick={() => setShowAnswer(true)}
-                                className="mt-8 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                                className="mt-6 md:mt-8 rounded-xl bg-emerald-600 px-4 py-2 text-xs md:text-sm font-semibold text-white hover:bg-emerald-700"
                               >
                                 Show Answer
                               </button>
                             </article>
 
-                            <article className="flashcard-face flashcard-back rounded-3xl border border-violet-200 bg-linear-to-br from-violet-100 to-fuchsia-100 p-8 text-left shadow-lg">
+                            <article className="flashcard-face flashcard-back rounded-3xl border border-violet-200 bg-linear-to-br from-violet-100 to-fuchsia-100 p-4 md:p-8 text-left shadow-lg">
                               <p className="inline-flex rounded-full bg-violet-900/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-900">
                                 Answer
                               </p>
-                              <p className="mt-6 text-2xl font-semibold leading-relaxed text-slate-900">{selectedCard.answer}</p>
+                              <p className="mt-4 md:mt-6 text-lg md:text-2xl font-semibold leading-relaxed text-slate-900">{selectedCard.answer}</p>
                               <button
                                 onClick={() => setShowAnswer(false)}
-                                className="mt-8 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+                                className="mt-6 md:mt-8 rounded-xl bg-violet-600 px-4 py-2 text-xs md:text-sm font-semibold text-white hover:bg-violet-700"
                               >
                                 Back to Question
                               </button>
@@ -604,19 +604,19 @@ const DocumentDetailPage = () => {
                           </div>
                         </div>
 
-                        <div className="mt-8 flex items-center justify-center gap-3">
+                        <div className="mt-6 md:mt-8 flex items-center justify-center gap-2 md:gap-3 flex-wrap">
                           <button
                             onClick={() => {
                               setShowAnswer(false);
                               setFlashcardIndex((prev) => Math.max(prev - 1, 0));
                             }}
-                            className="px-4 py-2 rounded-xl border border-slate-300"
+                            className="px-3 md:px-4 py-2 rounded-xl border border-slate-300 text-xs md:text-sm"
                           >
                             Previous
                           </button>
                           <button
                             onClick={handleToggleStar}
-                            className={`px-4 py-2 rounded-xl border ${selectedCard.isStarred ? "bg-amber-100 border-amber-300" : "border-slate-300"}`}
+                            className={`px-3 md:px-4 py-2 rounded-xl border text-xs md:text-sm ${selectedCard.isStarred ? "bg-amber-100 border-amber-300" : "border-slate-300"}`}
                           >
                             {selectedCard.isStarred ? "Starred" : "Star"}
                           </button>
@@ -625,7 +625,7 @@ const DocumentDetailPage = () => {
                               setShowAnswer(false);
                               setFlashcardIndex((prev) => Math.min(prev + 1, selectedSet.cards.length - 1));
                             }}
-                            className="px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600"
+                            className="px-3 md:px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 text-xs md:text-sm"
                           >
                             Next
                           </button>
@@ -636,7 +636,7 @@ const DocumentDetailPage = () => {
                 )}
 
                 {!selectedSet && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     {flashcardSets.map((set) => (
                       <button
                         key={set._id}
@@ -645,9 +645,9 @@ const DocumentDetailPage = () => {
                           setFlashcardIndex(0);
                           setShowAnswer(false);
                         }}
-                        className="rounded-2xl border border-emerald-200 bg-white p-5 text-left hover:shadow-sm"
+                        className="rounded-2xl border border-emerald-200 bg-white p-4 md:p-5 text-left hover:shadow-sm"
                       >
-                        <p className="text-xl font-semibold">Flashcard Set</p>
+                        <p className="text-lg md:text-xl font-semibold">Flashcard Set</p>
                         <p className="text-sm text-slate-500 mt-1">Created {new Date(set.createdAt).toDateString()}</p>
                         <p className="mt-4 inline-flex px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-medium">{set.cards.length} cards</p>
                       </button>
