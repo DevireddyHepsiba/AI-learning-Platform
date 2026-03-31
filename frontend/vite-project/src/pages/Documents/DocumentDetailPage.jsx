@@ -711,26 +711,26 @@ const DocumentDetailPage = () => {
 
       {summaryOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-3xl rounded-3xl bg-white border border-slate-200 shadow-2xl p-7 relative max-h-[80vh] overflow-auto">
-            <button onClick={() => setSummaryOpen(false)} className="absolute right-5 top-5 p-2 rounded-lg hover:bg-slate-100">
+          <div className="w-full max-w-2xl md:max-w-3xl rounded-3xl bg-white border border-slate-200 shadow-2xl p-5 md:p-7 relative max-h-[90vh] md:max-h-[80vh] overflow-auto">
+            <button onClick={() => setSummaryOpen(false)} className="absolute right-3 md:right-5 top-3 md:top-5 p-2 rounded-lg hover:bg-slate-100">
               <X size={20} />
             </button>
-            <h2 className="text-3xl font-bold">Generated Summary</h2>
-            <p className="mt-4 whitespace-pre-wrap text-lg text-slate-700">{summaryText}</p>
+            <h2 className="text-2xl md:text-3xl font-bold pr-10">Generated Summary</h2>
+            <p className="mt-3 md:mt-4 whitespace-pre-wrap text-sm md:text-lg text-slate-700">{summaryText}</p>
           </div>
         </div>
       )}
 
       {isQuizModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl p-7 relative">
-            <button onClick={() => setIsQuizModalOpen(false)} className="absolute right-5 top-5 p-2 rounded-lg hover:bg-slate-100">
+          <div className="w-full max-w-sm md:max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl p-5 md:p-7 relative">
+            <button onClick={() => setIsQuizModalOpen(false)} className="absolute right-3 md:right-5 top-3 md:top-5 p-2 rounded-lg hover:bg-slate-100">
               <X size={20} />
             </button>
-            <h2 className="text-3xl font-bold">Generate New Quiz</h2>
-            <p className="text-slate-500 mt-1">Choose number of questions</p>
+            <h2 className="text-2xl md:text-3xl font-bold">Generate New Quiz</h2>
+            <p className="text-slate-500 mt-1 text-sm md:text-base">Choose number of questions</p>
 
-            <div className="mt-5">
+            <div className="mt-4 md:mt-5">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Number of Questions</label>
               <input
                 type="number"
@@ -738,13 +738,13 @@ const DocumentDetailPage = () => {
                 max={20}
                 value={quizCount}
                 onChange={(event) => setQuizCount(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500"
+                className="w-full rounded-xl border border-slate-300 px-3 md:px-4 py-2 md:py-3 outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 text-sm md:text-base"
               />
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setIsQuizModalOpen(false)} className="px-6 py-3 rounded-xl border border-slate-300 font-semibold">Cancel</button>
-              <button onClick={handleGenerateQuiz} className="px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Generate</button>
+            <div className="mt-5 md:mt-6 flex justify-end gap-2 md:gap-3">
+              <button onClick={() => setIsQuizModalOpen(false)} className="px-4 md:px-6 py-2 md:py-3 rounded-xl border border-slate-300 font-semibold text-sm md:text-base">Cancel</button>
+              <button onClick={handleGenerateQuiz} className="px-4 md:px-6 py-2 md:py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 text-sm md:text-base">Generate</button>
             </div>
           </div>
         </div>

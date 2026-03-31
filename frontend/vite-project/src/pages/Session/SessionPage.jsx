@@ -1223,20 +1223,20 @@ export default function SessionPage() {
         </div>
       </div>
 
-      <div className="relative z-10 flex flex-1 overflow-hidden gap-4 p-4">
+      <div className="relative z-10 flex flex-1 overflow-hidden gap-2 md:gap-4 p-2 md:p-4 flex-col lg:flex-row">
         {joinNotice && (
-          <div className="absolute top-20 right-6 z-40 rounded-lg border border-emerald-300/30 bg-emerald-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          <div className="absolute top-20 right-3 md:right-6 z-40 rounded-lg border border-emerald-300/30 bg-emerald-500/90 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white shadow-lg max-w-xs md:max-w-none">
             {joinNotice}
           </div>
         )}
 
         {pdfUpdateNotice && (
-          <div className="absolute top-20 left-6 z-40 rounded-lg border border-cyan-300/30 bg-cyan-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          <div className="absolute top-20 left-3 md:left-6 z-40 rounded-lg border border-cyan-300/30 bg-cyan-500/90 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white shadow-lg max-w-xs md:max-w-none">
             {pdfUpdateNotice}
           </div>
         )}
 
-        <aside className="w-72 shrink-0 rounded-2xl border border-white/15 bg-slate-900/70 p-3 shadow-2xl backdrop-blur-xl flex flex-col">
+        <aside className="w-full lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-slate-900/70 p-3 shadow-2xl backdrop-blur-xl flex flex-col max-h-48 lg:max-h-none order-2 lg:order-1">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">Live Members</p>
             <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-slate-100">
@@ -1299,7 +1299,7 @@ export default function SessionPage() {
           </div>
         )}
 
-        <div className="flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative">
+        <div className="flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative order-1 lg:order-2 min-h-96">
           <PDFViewer
             documentUrl={session.documentUrl}
             currentPage={currentPage}
@@ -1320,10 +1320,10 @@ export default function SessionPage() {
           <RemoteCursorLayer remoteCursors={remoteCursors} />
         </div>
 
-        <div className="w-96 flex flex-col gap-4 overflow-hidden">
-          <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl p-4 overflow-y-auto shrink-0 max-h-1/3">
-            <h3 className="font-semibold text-slate-900 mb-3">Highlights ({highlights.length})</h3>
-            <div className="space-y-2 text-sm max-h-40 overflow-y-auto">
+        <div className="w-full lg:w-96 flex flex-col gap-3 md:gap-4 overflow-hidden order-3 md:order-3 max-h-64 md:max-h-none">
+          <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl p-3 md:p-4 overflow-y-auto shrink-0 max-h-32 md:max-h-1/3">
+            <h3 className="font-semibold text-slate-900 mb-2 md:mb-3 text-sm md:text-base">Highlights ({highlights.length})</h3>
+            <div className="space-y-1 md:space-y-2 text-xs md:text-sm max-h-24 md:max-h-40 overflow-y-auto">
               {highlights.slice(0, 5).map((h, idx) => (
                 <button
                   key={h._id || idx}
@@ -1332,10 +1332,10 @@ export default function SessionPage() {
                     setCurrentPage(h.page);
                   }}
                   style={{ borderLeftColor: h.color }}
-                  className="w-full text-left p-2 bg-slate-100/80 hover:bg-cyan-50 rounded border-l-4 transition cursor-pointer"
+                  className="w-full text-left p-1.5 md:p-2 bg-slate-100/80 hover:bg-cyan-50 rounded border-l-4 transition cursor-pointer"
                 >
-                  <p className="text-xs font-medium text-slate-600">{h.username}</p>
-                  <p className="text-slate-700">{prettifySnippet(h.text, 56)}</p>
+                  <p className="text-xs font-medium text-slate-600 truncate">{h.username}</p>
+                  <p className="text-slate-700 text-xs line-clamp-2">{prettifySnippet(h.text, 56)}</p>
                 </button>
               ))}
             </div>
@@ -1363,10 +1363,10 @@ export default function SessionPage() {
       </div>
 
       {showGuestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-96 p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Join Study Session</h2>
-            <p className="text-gray-600 mb-4">Please enter your name to join this collaborative session</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 md:p-8">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-3 md:mb-4">Join Study Session</h2>
+            <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">Please enter your name to join this collaborative session</p>
             <input
               type="text"
               value={guestName}
@@ -1377,13 +1377,13 @@ export default function SessionPage() {
                 }
               }}
               placeholder="Enter your name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 md:mb-6 text-sm md:text-base"
               autoFocus
             />
             <button
               onClick={handleGuestJoin}
               disabled={!guestName.trim()}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 font-semibold"
+              className="w-full bg-blue-600 text-white py-2 md:py-3 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 font-semibold text-sm md:text-base"
             >
               Join Session
             </button>
@@ -1392,39 +1392,39 @@ export default function SessionPage() {
       )}
 
       {selectionAction && (
-        <div className="fixed bottom-6 right-6 z-50 w-90 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+        <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 left-4 md:left-auto z-50 w-auto md:w-80 rounded-2xl border border-slate-200 bg-white p-3 md:p-4 shadow-2xl max-h-96 overflow-auto">
           <p className="text-xs font-semibold text-slate-500">Selected Text</p>
-          <p className="mt-1 text-sm text-slate-800 line-clamp-3">{selectionAction.text}</p>
+          <p className="mt-1 text-xs md:text-sm text-slate-800 line-clamp-3">{selectionAction.text}</p>
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               onClick={() => {
                 handleHighlight(selectionAction);
                 setSelectionAction(null);
               }}
-              className="inline-flex items-center gap-2 rounded-lg bg-yellow-100 px-3 py-2 text-sm font-medium text-yellow-800 hover:bg-yellow-200"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-100 px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm font-medium text-yellow-800 hover:bg-yellow-200 whitespace-nowrap"
             >
-              <Highlighter size={14} /> Highlight
+              <Highlighter size={14} /> <span className="hidden md:inline">Highlight</span>
             </button>
             <button
               onClick={handleAskAiForSelection}
-              className="inline-flex items-center gap-2 rounded-lg bg-violet-100 px-3 py-2 text-sm font-medium text-violet-800 hover:bg-violet-200"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-violet-100 px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm font-medium text-violet-800 hover:bg-violet-200 whitespace-nowrap"
             >
-              <Sparkles size={14} /> {aiLoading ? "Thinking..." : "Ask AI"}
+              <Sparkles size={14} /> <span className="hidden sm:inline">{aiLoading ? "Thinking..." : "Ask AI"}</span><span className="sm:hidden">{aiLoading ? "..." : "AI"}</span>
             </button>
             <button
               onClick={() => {
                 setSelectionAction(null);
                 setAiResult("");
               }}
-              className="ml-auto text-xs text-slate-500 underline"
+              className="ml-auto text-xs text-slate-500 underline hover:text-slate-700"
             >
               Close
             </button>
           </div>
 
           {aiResult && (
-            <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900 whitespace-pre-wrap max-h-40 overflow-auto">
+            <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-2 md:p-3 text-xs md:text-sm text-violet-900 whitespace-pre-wrap max-h-40 overflow-auto">
               {aiResult}
             </div>
           )}
