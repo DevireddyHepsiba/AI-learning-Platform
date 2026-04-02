@@ -76,6 +76,11 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
       context.lineWidth = brushSize;
       context.beginPath();
       context.moveTo(fromX, fromY);
+      context.lineTo(toX, toY);
+      context.stroke();
+    }
+
+    // Broadcast to other users
     const currentSocket = getSocket();
     if (currentSocket) {
       currentSocket.emit("drawing-stroke", {
@@ -89,12 +94,7 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
         color,
         brushSize,
       });
-    }oX,
-      toY,
-      tool,
-      color,
-      brushSize,
-    });
+    }
   };
 
   // Draw remote user's line
@@ -166,7 +166,10 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
     contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
     
     // Notify others
-    socket.emit("drawing-clear", { sessionId, userId });
+    const currentSocket = getSocket();
+    if (currentSocket) {
+      currentSocket.emit("drawing-clear", { sessionId, userId });
+    }
     toast.success("Canvas cleared");
   };
 
