@@ -47,13 +47,13 @@ export default function NotesPanel({
       {/* Header */}
       <div className="p-3 md:p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100">
         <div className="flex items-center gap-2 min-w-0">
-          <FileText size={18} className="text-green-600 flex-shrink-0" />
+          <FileText size={18} className="text-green-600 shrink-0" />
           <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">Shared Notes</h3>
         </div>
         <button
           onClick={handleCopy}
           title="Copy to clipboard"
-          className="p-2 hover:bg-green-200 rounded-lg transition text-green-600 flex-shrink-0"
+          className="p-2 hover:bg-green-200 rounded-lg transition text-green-600 shrink-0"
         >
           {copied ? (
             <Check size={18} className="text-green-600" />

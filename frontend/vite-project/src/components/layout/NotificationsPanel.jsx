@@ -84,7 +84,7 @@ export default function NotificationsPanel() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 transition flex-shrink-0"
+        className="relative p-2 text-gray-600 hover:text-gray-900 transition shrink-0"
         aria-label="Notifications"
       >
         <Bell size={20} className="md:w-6 md:h-6" />
@@ -140,7 +140,7 @@ export default function NotificationsPanel() {
                       </p>
                     </div>
                     {!notification.isRead && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-1 flex-shrink-0"></div>
+                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-1 shrink-0"></div>
                     )}
                   </div>
 
@@ -156,7 +156,7 @@ export default function NotificationsPanel() {
                     {!notification.isRead && (
                       <button
                         onClick={() => handleMarkAsRead(notification._id)}
-                        className="px-2 py-1 text-gray-600 hover:bg-gray-200 rounded transition flex-shrink-0"
+                        className="px-2 py-1 text-gray-600 hover:bg-gray-200 rounded transition shrink-0"
                         title="Mark as read"
                       >
                         <Check size={14} />
@@ -165,7 +165,7 @@ export default function NotificationsPanel() {
 
                     <button
                       onClick={() => handleDelete(notification._id)}
-                      className="px-2 py-1 text-gray-600 hover:bg-red-100 rounded transition text-red-600 flex-shrink-0"
+                      className="px-2 py-1 text-gray-600 hover:bg-red-100 rounded transition text-red-600 shrink-0"
                       title="Delete"
                     >
                       <Trash2 size={14} />

@@ -121,7 +121,7 @@ const AppShell = ({ children }) => {
         {/* Mobile Overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 lg:hidden z-[5]"
+            className="fixed inset-0 bg-black bg-opacity-50 lg:hidden z-5"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -133,7 +133,7 @@ const AppShell = ({ children }) => {
               <NotificationsPanel />
 
               <div className="flex items-center gap-2 md:gap-3">
-                <div className="h-9 md:h-10 w-9 md:w-10 rounded-xl bg-emerald-500 text-white grid place-items-center font-semibold uppercase text-xs md:text-sm flex-shrink-0">
+                <div className="h-9 md:h-10 w-9 md:w-10 rounded-xl bg-emerald-500 text-white grid place-items-center font-semibold uppercase text-xs md:text-sm shrink-0">
                   {(user?.username || "A").slice(0, 1)}
                 </div>
                 <div className="leading-tight hidden md:block min-w-0">

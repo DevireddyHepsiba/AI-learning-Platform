@@ -364,7 +364,7 @@ const DocumentDetailPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">{documentData.title}</h1>
           <span
-            className={`px-3 py-1 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap flex-shrink-0 ${
+            className={`px-3 py-1 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap shrink-0 ${
               isDocumentReady ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
             }`}
           >
@@ -498,7 +498,7 @@ const DocumentDetailPage = () => {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 space-y-4 md:space-y-6">
             <div className="rounded-2xl border border-slate-200 p-4 md:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
               <div className="flex items-start gap-3 md:gap-4 min-w-0">
-                <div className="h-10 md:h-12 w-10 md:w-12 rounded-xl bg-sky-100 text-sky-600 grid place-items-center flex-shrink-0"><BookOpen size={20} className="md:w-6 md:h-6" /></div>
+                <div className="h-10 md:h-12 w-10 md:w-12 rounded-xl bg-sky-100 text-sky-600 grid place-items-center shrink-0"><BookOpen size={20} className="md:w-6 md:h-6" /></div>
                 <div className="min-w-0">
                   <p className="text-lg md:text-2xl font-semibold">Generate Summary</p>
                   <p className="text-slate-500 text-sm md:text-base">Get a concise summary of the entire document.</p>
@@ -507,7 +507,7 @@ const DocumentDetailPage = () => {
               <button
                 onClick={handleGenerateSummary}
                 disabled={summaryLoading}
-                className="px-4 md:px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60 text-sm md:text-base whitespace-nowrap flex-shrink-0 w-full sm:w-auto"
+                className="px-4 md:px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-60 text-sm md:text-base whitespace-nowrap shrink-0 w-full sm:w-auto"
               >
                 {summaryLoading ? "Summarizing..." : "Summarize"}
               </button>
@@ -515,7 +515,7 @@ const DocumentDetailPage = () => {
 
             <div className="rounded-2xl border border-slate-200 p-4 md:p-5">
               <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-4">
-                <div className="h-10 md:h-12 w-10 md:w-12 rounded-xl bg-amber-100 text-amber-600 grid place-items-center flex-shrink-0"><Sparkles size={20} className="md:w-6 md:h-6" /></div>
+                <div className="h-10 md:h-12 w-10 md:w-12 rounded-xl bg-amber-100 text-amber-600 grid place-items-center shrink-0"><Sparkles size={20} className="md:w-6 md:h-6" /></div>
                 <div className="min-w-0">
                   <p className="text-lg md:text-2xl font-semibold">Explain a Concept</p>
                   <p className="text-slate-500 text-sm md:text-base">Enter a topic from this document to get detailed explanation.</p>

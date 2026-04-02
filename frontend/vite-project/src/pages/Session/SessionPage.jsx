@@ -1133,7 +1133,7 @@ export default function SessionPage() {
         </div>
 
         <div className="flex items-center gap-1 md:gap-2 flex-wrap justify-end">
-          <div className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 flex-shrink-0">
+          <div className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 shrink-0">
             <Users size={14} className="text-cyan-200 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm font-medium text-cyan-100">{activeUsers.length}</span>
             <span className="text-[10px] md:text-xs text-cyan-100/90 animate-pulse hidden sm:inline">active</span>
@@ -1156,7 +1156,7 @@ export default function SessionPage() {
 
           <button
             onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-xs md:text-sm flex-shrink-0"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-xs md:text-sm shrink-0"
             title="Invite people to session"
           >
             <Share2 size={14} className="md:w-4 md:h-4" />
@@ -1166,7 +1166,7 @@ export default function SessionPage() {
           <button
             onClick={handleClickUploadPdf}
             disabled={isUploadingPdf}
-            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm disabled:opacity-60 flex-shrink-0"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm disabled:opacity-60 shrink-0"
             title="Upload/replace PDF for this session"
           >
             <Upload size={14} className="md:w-4 md:h-4" />
@@ -1183,7 +1183,7 @@ export default function SessionPage() {
 
           <button
             onClick={handleToggleAV}
-            className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg transition text-xs md:text-sm flex-shrink-0 ${
+            className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg transition text-xs md:text-sm shrink-0 ${
               isMediaOn ? "border border-amber-300/30 bg-amber-400/15 text-amber-100" : "border border-white/20 bg-white/10 text-slate-100 hover:bg-white/20"
             }`}
             title="Join/leave live audio and video"
@@ -1195,7 +1195,7 @@ export default function SessionPage() {
           <button
             onClick={() => setMicOn((v) => !v)}
             disabled={!isMediaOn}
-            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 flex-shrink-0"
+            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 shrink-0"
             title="Toggle microphone"
           >
             {micOn ? <Mic size={14} className="md:w-4 md:h-4" /> : <MicOff size={14} className="md:w-4 md:h-4" />}
@@ -1204,7 +1204,7 @@ export default function SessionPage() {
           <button
             onClick={() => setCamOn((v) => !v)}
             disabled={!isMediaOn}
-            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 flex-shrink-0"
+            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 shrink-0"
             title="Toggle camera"
           >
             {camOn ? <Camera size={14} className="md:w-4 md:h-4" /> : <CameraOff size={14} className="md:w-4 md:h-4" />}
@@ -1212,7 +1212,7 @@ export default function SessionPage() {
 
           <button
             onClick={() => setIsDrawingOpen(true)}
-            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-purple-300/30 bg-purple-400/10 text-purple-100 hover:bg-purple-400/20 transition text-xs md:text-sm flex-shrink-0"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-purple-300/30 bg-purple-400/10 text-purple-100 hover:bg-purple-400/20 transition text-xs md:text-sm shrink-0"
             title="Open collaborative drawing canvas"
           >
             <Paintbrush size={14} className="md:w-4 md:h-4" />
@@ -1221,7 +1221,7 @@ export default function SessionPage() {
 
           <button
             onClick={handleDownloadNotes}
-            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-indigo-300/30 bg-indigo-400/10 text-indigo-100 hover:bg-indigo-400/20 transition text-xs md:text-sm flex-shrink-0"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-indigo-300/30 bg-indigo-400/10 text-indigo-100 hover:bg-indigo-400/20 transition text-xs md:text-sm shrink-0"
             title="Download session notes"
           >
             <Download size={14} className="md:w-4 md:h-4" />
@@ -1231,7 +1231,7 @@ export default function SessionPage() {
           {!showLeftSidebar && (
             <button
               onClick={() => setShowLeftSidebar(true)}
-              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm flex-shrink-0"
+              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm shrink-0"
               title="Show live participants"
             >
               <Users size={14} className="md:w-4 md:h-4" />
@@ -1242,7 +1242,7 @@ export default function SessionPage() {
           {!showRightSidebar && (
             <button
               onClick={() => setShowRightSidebar(true)}
-              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-xs md:text-sm flex-shrink-0"
+              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-xs md:text-sm shrink-0"
               title="Show highlights & notes"
             >
               <Highlighter size={14} className="md:w-4 md:h-4" />
@@ -1252,7 +1252,7 @@ export default function SessionPage() {
 
           <button
             onClick={handleExitSession}
-            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 transition text-slate-200 hover:text-white flex-shrink-0"
+            className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 transition text-slate-200 hover:text-white shrink-0"
             title="Exit session"
           >
             <X size={18} className="md:w-5 md:h-5" />

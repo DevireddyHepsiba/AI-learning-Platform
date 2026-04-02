@@ -33,10 +33,10 @@ export default function HomePage() {
 
       <header className="mx-auto flex w-full max-w-none items-center justify-between px-3 md:px-4 lg:px-12 py-4 md:py-6 gap-2">
         <div className="flex items-center gap-1.5 md:gap-2 text-sm md:text-lg font-semibold tracking-tight truncate">
-          <Sparkles size={16} className="text-cyan-300 flex-shrink-0" />
+          <Sparkles size={16} className="text-cyan-300 shrink-0" />
           <span className="truncate">AI Learning</span>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/login"
             className="rounded-lg border border-slate-500/40 px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-slate-100 hover:border-slate-300/50 whitespace-nowrap"
@@ -128,7 +128,7 @@ export default function HomePage() {
             Turn every document into clarity, every doubt into discussion, and every session into progress.
           </p>
           <div className="mt-3 md:mt-5 inline-flex items-center gap-1.5 md:gap-2 rounded-lg bg-white/10 px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-slate-100">
-            <MessageSquareText size={14} className="text-cyan-200 flex-shrink-0" />
+            <MessageSquareText size={14} className="text-cyan-200 shrink-0" />
             <span>Think deeply. Collaborate openly. Learn continuously.</span>
           </div>
         </section>

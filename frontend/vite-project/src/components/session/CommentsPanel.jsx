@@ -64,15 +64,15 @@ export default function CommentsPanel({
       {/* Header */}
       <div className="p-3 md:p-4 border-b border-gray-200 flex items-center justify-between bg-linear-to-r from-blue-50 to-blue-100 gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <MessageCircle size={18} className="text-blue-600 flex-shrink-0" />
+          <MessageCircle size={18} className="text-blue-600 shrink-0" />
           <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">Highlights</h3>
         </div>
-        <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex-shrink-0">
+        <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full shrink-0">
           {highlightComments.length}
         </span>
         <button
           onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 transition flex-shrink-0"
+          className="text-gray-500 hover:text-gray-700 transition shrink-0"
         >
           <X size={20} />
         </button>
@@ -105,11 +105,11 @@ export default function CommentsPanel({
                 <span className="font-semibold text-xs md:text-sm text-gray-900 truncate">
                   {comment.username}
                 </span>
-                <span className="text-xs text-gray-500 flex-shrink-0">
+                <span className="text-xs text-gray-500 shrink-0">
                   {formatTime(comment.createdAt)}
                 </span>
               </div>
-              <p className="text-xs md:text-sm text-gray-700 break-words">{comment.text}</p>
+              <p className="text-xs md:text-sm text-gray-700 break-normal">{comment.text}</p>
             </div>
           ))
         )}
@@ -132,7 +132,7 @@ export default function CommentsPanel({
           <button
             type="submit"
             disabled={!newComment.trim() || isSubmitting}
-            className="px-3 py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 disabled:bg-gray-300 transition flex-shrink-0"
+            className="px-3 py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 disabled:bg-gray-300 transition shrink-0"
           >
             {isSubmitting ? "..." : "Send"}
           </button>
