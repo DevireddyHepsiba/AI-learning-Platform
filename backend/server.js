@@ -204,17 +204,7 @@ app.get("/uploads/documents/:fileName", async (req, res, next) => {
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-/* Routes */
-app.use("/api/auth", authRoutes);
-app.use("/api/sessions", sessionRoutes);
-app.use("/api/documents", documentationRoutes);
-app.use("/api/flashcards", flashcardRoutes);
-app.use("/api/ai", aiRoutes);
-app.use("/api/quizzes",quizRoutes);
-app.use("/api/progress",progressRoutes);
-app.use("/api/notifications", notificationRoutes);
-
-/* ==================== GOOGLE OAUTH ROUTES ==================== */
+/* ==================== GOOGLE OAUTH ROUTES (MUST BE FIRST) ==================== */
 // Step 1: Initiate Google authentication
 app.get("/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
@@ -235,7 +225,7 @@ app.get("/auth/google/callback",
 
 // Get current user (protected)
 app.get("/auth/user", (req, res) => {
-  if (req.isAuthenticated && req.user) {
+  if (req.isAuthenticated() && req.user) {
     return res.json({
       success: true,
       user: {
@@ -258,6 +248,16 @@ app.post("/auth/logout", (req, res) => {
     res.json({ success: true, message: "Logged out successfully" });
   });
 });
+
+/* Routes */
+app.use("/api/auth", authRoutes);
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/documents", documentationRoutes);
+app.use("/api/flashcards", flashcardRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/quizzes",quizRoutes);
+app.use("/api/progress",progressRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 /* ==================== SOCKET.IO EVENT HANDLERS ==================== */
 io.on("connection", (socket) => {
