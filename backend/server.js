@@ -8,8 +8,12 @@ import fs from "fs/promises";
 import { fileURLToPath} from 'url';
 import { createServer } from "http";
 import { Server } from "socket.io";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import session from "express-session";
 
 import connectDB from "./config/db.js";
+import User from "./models/User.js";
 import authRoutes from "./routes/authRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
@@ -97,6 +101,71 @@ connectDB();
 app.use(cors(corsOptions));
 app.use(express.json());
 
+/* Session & Passport Setup for OAuth */
+app.use(session({
+  secret: process.env.JWT_SECRET || "your-secret-key",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: "lax",
+  },
+}));
+
+app.set("trust proxy", 1); // Trust proxy for production (Render, Vercel, etc)
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+/* Google OAuth Strategy */
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: `${process.env.API_BASE_URL}/auth/google/callback`,
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Find or create user
+    let user = await User.findOne({ googleId: profile.id });
+    
+    if (!user) {
+      // Create new user from Google profile
+      user = new User({
+        googleId: profile.id,
+        email: profile.emails[0].value,
+        username: profile.displayName || profile.emails[0].value.split("@")[0],
+        profileImage: profile.photos[0]?.value,
+        password: null, // OAuth users don't have password
+      });
+      await user.save();
+      console.log("✅ New user created via Google OAuth:", user.email);
+    } else {
+      console.log("✅ User authenticated via Google OAuth:", user.email);
+    }
+    
+    return done(null, user);
+  } catch (error) {
+    console.error("❌ Google OAuth error:", error);
+    return done(error);
+  }
+}));
+
+/* Serialize user for session */
+passport.serializeUser((user, done) => {
+  done(null, user._id);
+});
+
+/* Deserialize user from session */
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error);
+  }
+});
+
 // Backward-compatible PDF file serving:
 // If a session references original file name (e.g. react_notes.pdf),
 // resolve it to stored multer name (e.g. 12345-react_notes.pdf).
@@ -144,6 +213,51 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/quizzes",quizRoutes);
 app.use("/api/progress",progressRoutes);
 app.use("/api/notifications", notificationRoutes);
+
+/* ==================== GOOGLE OAUTH ROUTES ==================== */
+// Step 1: Initiate Google authentication
+app.get("/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// Step 2: Google OAuth callback
+app.get("/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+    // ✅ User authenticated successfully
+    console.log("✅ Google OAuth successful:", req.user.email);
+    
+    // Redirect to frontend dashboard
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    res.redirect(`${frontendUrl}/dashboard?authenticated=true`);
+  }
+);
+
+// Get current user (protected)
+app.get("/auth/user", (req, res) => {
+  if (req.isAuthenticated && req.user) {
+    return res.json({
+      success: true,
+      user: {
+        _id: req.user._id,
+        email: req.user.email,
+        username: req.user.username,
+        profileImage: req.user.profileImage,
+      }
+    });
+  }
+  res.status(401).json({ success: false, message: "Not authenticated" });
+});
+
+// Logout
+app.post("/auth/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: "Logout failed" });
+    }
+    res.json({ success: true, message: "Logged out successfully" });
+  });
+});
 
 /* ==================== SOCKET.IO EVENT HANDLERS ==================== */
 io.on("connection", (socket) => {

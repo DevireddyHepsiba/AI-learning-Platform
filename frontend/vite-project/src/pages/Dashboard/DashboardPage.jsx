@@ -1,5 +1,7 @@
 import { BookOpen, Brain, ClipboardList, Loader2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import AppShell from "../../components/auth/layout/AppShell";
 import CreateSessionModal from "../../components/session/CreateSessionModal";
 import progressService from "../../services/progressService";
@@ -17,10 +19,30 @@ const StatCard = ({ label, value, icon: Icon, tone }) => (
 );
 
 const DashboardPage = () => {
+  const [searchParams] = useSearchParams();
+  const { loginWithOAuth } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
+
+  // ✅ Handle OAuth callback
+  useEffect(() => {
+    const authenticated = searchParams.get("authenticated");
+    if (authenticated === "true") {
+      const handleOAuthLogin = async () => {
+        const success = await loginWithOAuth();
+        if (success) {
+          console.log("✅ OAuth login successful");
+          // Remove the query param
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          console.error("❌ OAuth login failed");
+        }
+      };
+      handleOAuthLogin();
+    }
+  }, [searchParams, loginWithOAuth]);
 
   useEffect(() => {
     const loadDashboard = async () => {
