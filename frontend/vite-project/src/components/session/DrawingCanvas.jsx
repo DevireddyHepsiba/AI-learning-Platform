@@ -14,9 +14,18 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
   const [drawingData, setDrawingData] = useState([]);
   const canvasImageRef = useRef(null);
 
-  // Initialize canvas
+  // Initialize canvas and socket listeners
   useEffect(() => {
     if (!isOpen || !canvasRef.current) return;
+
+    const currentSocket = getSocket();
+    if (!currentSocket) {
+      console.error("❌ Socket not initialized!");
+      toast.error("Connection error");
+      return;
+    }
+
+    console.log("🎨 DrawingCanvas mounted, socket connected:", currentSocket.connected, "sessionId:", sessionId);
 
     const canvas = canvasRef.current;
     canvas.width = window.innerWidth;
@@ -27,60 +36,65 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
     context.lineJoin = "round";
     contextRef.current = context;
 
-    // Load existing drawings
-    loadDrawings();
+    // Restore previous canvas state if available
+    if (canvasImageRef.current) {
+      context.putImageData(canvasImageRef.current, 0, 0);
+    }
 
     // Handle window resize
     const handleResize = () => {
+      const imageData = contextRef.current?.getImageData(0, 0, canvas.width, canvas.height);
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      redrawCanvas();
+      contextRef.current.lineCap = "round";
+      contextRef.current.lineJoin = "round";
+      contextRef.current.lineWidth = brushSize;
+      if (imageData) {
+        contextRef.current.putImageData(imageData, 0, 0);
+      }
     };
 
     window.addEventListener("resize", handleResize);
 
-    // Listen for other users' drawings
-    const currentSocket = getSocket();
-    if (currentSocket) {
-      console.log("🎨 DrawingCanvas: Setting up socket listeners for session:", sessionId);
-      
-      // Listen for remote drawing strokes
-      currentSocket.on("drawing-update", (data) => {
-        console.log("📨 Received drawing-update:", data);
-        drawRemoteLine(data);
-      });
+    // Load existing drawings
+    loadDrawings();
 
-      // Listen for canvas clear
-      currentSocket.on("drawing-cleared", (data) => {
-        console.log("🧹 Canvas cleared by:", data.userId);
-        if (contextRef.current && canvas) {
-          contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
-          canvasImageRef.current = null;
-        }
-      });
+    // 🎨 Critical: Set up socket event listeners
+    const handleDrawingUpdate = (data) => {
+      console.log("📨 [DrawingCanvas] Received drawing-update:", data);
+      drawRemoteLine(data);
+    };
 
-      // Listen for presence updates
-      currentSocket.on("presence-list", (users) => {
-        console.log("👥 Updated presence:", users.length, "users");
-        setActiveUsers(users.length);
-      });
+    const handleDrawingCleared = (data) => {
+      console.log("🧹 [DrawingCanvas] Canvas cleared by:", data.userId);
+      if (contextRef.current && canvas) {
+        contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
+        canvasImageRef.current = null;
+      }
+    };
 
-      currentSocket.on("presence-update", (data) => {
-        console.log("👥 User presence update:", data);
-        if (data && data.users) {
-          setActiveUsers(data.users.length);
-        }
-      });
-    }
+    const handlePresenceUpdate = (data) => {
+      console.log("👥 [DrawingCanvas] Presence update:", data);
+      if (data && data.users) {
+        setActiveUsers(data.users.length);
+      }
+    };
+
+    // Register event listeners
+    currentSocket.on("drawing-update", handleDrawingUpdate);
+    currentSocket.on("drawing-cleared", handleDrawingCleared);
+    currentSocket.on("presence-update", handlePresenceUpdate);
+    currentSocket.on("presence-list", handlePresenceUpdate);
+
+    console.log("✅ [DrawingCanvas] All socket listeners registered");
 
     return () => {
+      console.log("🧹 [DrawingCanvas] Cleaning up socket listeners");
       window.removeEventListener("resize", handleResize);
-      if (currentSocket) {
-        currentSocket.off("drawing-update");
-        currentSocket.off("drawing-cleared");
-        currentSocket.off("presence-list");
-        currentSocket.off("presence-update");
-      }
+      currentSocket.off("drawing-update", handleDrawingUpdate);
+      currentSocket.off("drawing-cleared", handleDrawingCleared);
+      currentSocket.off("presence-update", handlePresenceUpdate);
+      currentSocket.off("presence-list", handlePresenceUpdate);
     };
   }, [isOpen, sessionId]);
 
@@ -141,7 +155,12 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
   // Draw remote user's line
   const drawRemoteLine = (data) => {
     const context = contextRef.current;
-    if (!context) return;
+    const canvas = canvasRef.current;
+    
+    if (!context || !canvas) {
+      console.warn("❌ Context or canvas not available for remote drawing");
+      return;
+    }
 
     const { fromX, fromY, toX, toY, tool: remoteTool, color: remoteColor, brushSize: remoteBrushSize } = data;
 
@@ -151,11 +170,16 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
     } else {
       context.strokeStyle = remoteColor;
       context.lineWidth = remoteBrushSize;
+      context.lineCap = "round";
+      context.lineJoin = "round";
       context.beginPath();
       context.moveTo(fromX, fromY);
       context.lineTo(toX, toY);
       context.stroke();
     }
+
+    // Store updated canvas state for new participants
+    canvasImageRef.current = context.getImageData(0, 0, canvas.width, canvas.height);
   };
 
   // Redraw canvas on resize
