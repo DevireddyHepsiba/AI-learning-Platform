@@ -126,6 +126,12 @@ passport.use(new GoogleStrategy({
   callbackURL: `${process.env.API_BASE_URL}/auth/google/callback`,
 }, async (accessToken, refreshToken, profile, done) => {
   try {
+    console.log("🔍 Google profile received:", {
+      id: profile.id,
+      email: profile.emails?.[0]?.value,
+      displayName: profile.displayName,
+    });
+
     // Find or create user
     let user = await User.findOne({ googleId: profile.id });
     
@@ -146,7 +152,7 @@ passport.use(new GoogleStrategy({
     
     return done(null, user);
   } catch (error) {
-    console.error("❌ Google OAuth error:", error);
+    console.error("❌ Google OAuth error:", error.message, error);
     return done(error);
   }
 }));
@@ -211,17 +217,31 @@ app.get("/auth/google",
 );
 
 // Step 2: Google OAuth callback
-app.get("/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
-    // ✅ User authenticated successfully
-    console.log("✅ Google OAuth successful:", req.user.email);
-    
-    // Redirect to frontend dashboard
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-    res.redirect(`${frontendUrl}/dashboard?authenticated=true`);
-  }
-);
+app.get("/auth/google/callback", (req, res, next) => {
+  console.log("📍 Google callback received with query:", Object.keys(req.query));
+  
+  passport.authenticate("google", { 
+    failureRedirect: "/?error=auth_failed",
+    failureMessage: true 
+  })(req, res, () => {
+    try {
+      // ✅ User authenticated successfully
+      if (!req.user) {
+        console.error("❌ No user found after authentication");
+        return res.status(400).json({ success: false, error: "User not found after authentication" });
+      }
+
+      console.log("✅ Google OAuth successful:", req.user.email);
+      
+      // Redirect to frontend dashboard
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      res.redirect(`${frontendUrl}/dashboard?authenticated=true`);
+    } catch (error) {
+      console.error("❌ OAuth callback error:", error);
+      res.status(500).json({ success: false, error: error.message || "OAuth callback failed" });
+    }
+  });
+});
 
 // Get current user (protected)
 app.get("/auth/user", (req, res) => {
