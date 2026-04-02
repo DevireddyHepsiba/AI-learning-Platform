@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { X, Pen, Eraser, RotateCcw, Download } from "lucide-react";
-import { socket } from "../../utils/socketClient";
+import { getSocket } from "../../utils/socketClient";
 import toast from "react-hot-toast";
 
 const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
@@ -38,13 +38,18 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
     window.addEventListener("resize", handleResize);
 
     // Listen for other users' drawings
-    socket.on("drawing-update", (data) => {
-      drawRemoteLine(data);
-    });
+    const currentSocket = getSocket();
+    if (currentSocket) {
+      currentSocket.on("drawing-update", (data) => {
+        drawRemoteLine(data);
+      });
+    }
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      socket.off("drawing-update");
+      if (currentSocket) {
+        currentSocket.off("drawing-update");
+      }
     };
   }, [isOpen, sessionId]);
 
@@ -71,17 +76,20 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
       context.lineWidth = brushSize;
       context.beginPath();
       context.moveTo(fromX, fromY);
-      context.lineTo(toX, toY);
-      context.stroke();
-    }
-
-    // Broadcast to other users
-    socket.emit("drawing-stroke", {
-      sessionId,
-      userId,
-      fromX,
-      fromY,
-      toX,
+    const currentSocket = getSocket();
+    if (currentSocket) {
+      currentSocket.emit("drawing-stroke", {
+        sessionId,
+        userId,
+        fromX,
+        fromY,
+        toX,
+        toY,
+        tool,
+        color,
+        brushSize,
+      });
+    }oX,
       toY,
       tool,
       color,
