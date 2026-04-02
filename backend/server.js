@@ -132,27 +132,37 @@ passport.use(new GoogleStrategy({
       displayName: profile.displayName,
     });
 
+    // ⚠️ Validate required fields
+    if (!profile.id || !profile.emails || !profile.emails[0] || !profile.emails[0].value) {
+      console.error("❌ Google profile missing required fields");
+      return done(new Error("Google profile missing email or ID"));
+    }
+
     // Find or create user
     let user = await User.findOne({ googleId: profile.id });
     
     if (!user) {
       // Create new user from Google profile
+      const email = profile.emails[0].value;
+      const username = profile.displayName || email.split("@")[0];
+      
       user = new User({
         googleId: profile.id,
-        email: profile.emails[0].value,
-        username: profile.displayName || profile.emails[0].value.split("@")[0],
-        profileImage: profile.photos[0]?.value,
+        email: email,
+        username: username,
+        profileImage: profile.photos?.[0]?.value || null,
         password: null, // OAuth users don't have password
       });
+      
       await user.save();
-      console.log("✅ New user created via Google OAuth:", user.email);
+      console.log("✅ New user created via Google OAuth:", user._id, user.email);
     } else {
-      console.log("✅ User authenticated via Google OAuth:", user.email);
+      console.log("✅ User found via Google OAuth:", user._id, user.email);
     }
     
     return done(null, user);
   } catch (error) {
-    console.error("❌ Google OAuth error:", error.message, error);
+    console.error("❌ Google OAuth Strategy error:", error.message);
     return done(error);
   }
 }));
@@ -216,32 +226,30 @@ app.get("/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Step 2: Google OAuth callback
-app.get("/auth/google/callback", (req, res, next) => {
-  console.log("📍 Google callback received with query:", Object.keys(req.query));
-  
-  passport.authenticate("google", { 
-    failureRedirect: "/?error=auth_failed",
-    failureMessage: true 
-  })(req, res, () => {
-    try {
-      // ✅ User authenticated successfully
-      if (!req.user) {
-        console.error("❌ No user found after authentication");
-        return res.status(400).json({ success: false, error: "User not found after authentication" });
-      }
-
-      console.log("✅ Google OAuth successful:", req.user.email);
-      
-      // Redirect to frontend dashboard
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-      res.redirect(`${frontendUrl}/dashboard?authenticated=true`);
-    } catch (error) {
-      console.error("❌ OAuth callback error:", error);
-      res.status(500).json({ success: false, error: error.message || "OAuth callback failed" });
+// Step 2: Google OAuth callback - with custom error handler
+const googleCallbackHandler = (req, res) => {
+  try {
+    // ✅ User authenticated successfully
+    if (!req.user) {
+      console.error("❌ No user found after Passport authentication");
+      return res.status(400).json({ success: false, error: "User not found after authentication" });
     }
-  });
-});
+
+    console.log("✅ Google OAuth successful, user:", req.user._id, req.user.email);
+    
+    // Redirect to frontend dashboard
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    return res.redirect(`${frontendUrl}/dashboard?authenticated=true`);
+  } catch (error) {
+    console.error("❌ OAuth callback handler error:", error.message);
+    return res.status(500).json({ success: false, error: error.message || "OAuth callback failed" });
+  }
+};
+
+app.get("/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/?error=oauth_failed" }),
+  googleCallbackHandler
+);
 
 // Get current user (protected)
 app.get("/auth/user", (req, res) => {
