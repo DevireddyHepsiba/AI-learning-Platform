@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { X, Pen, Eraser, RotateCcw, Download } from "lucide-react";
+import { X, Pen, Eraser, RotateCcw, Download, Users } from "lucide-react";
 import { getSocket } from "../../utils/socketClient";
 import toast from "react-hot-toast";
 
@@ -9,8 +9,10 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState("pen"); // pen, eraser
   const [color, setColor] = useState("#000000");
-  const [brushSize, setBrushSize] = useState(3);
+  const [brushSize, setBrushSize] = useState(5);
+  const [activeUsers, setActiveUsers] = useState(1);
   const [drawingData, setDrawingData] = useState([]);
+  const canvasImageRef = useRef(null);
 
   // Initialize canvas
   useEffect(() => {
@@ -195,7 +197,13 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-4 flex items-center justify-between shadow-lg">
-        <h2 className="text-2xl font-bold">🎨 Collaborative Drawing</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold">🎨 Collaborative Drawing</h2>
+          <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+            <Users size={18} />
+            <span className="font-semibold">{activeUsers} drawing</span>
+          </div>
+        </div>
         <button
           onClick={handleClose}
           className="p-2 hover:bg-white/20 rounded-lg transition"
@@ -245,16 +253,16 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
 
         {/* Brush Size */}
         <div className="flex items-center gap-2">
-          <label className="font-semibold text-slate-700">Size:</label>
+          <label className="font-semibold text-slate-700">Brush:  </label>
           <input
             type="range"
             min="1"
-            max="20"
+            max="50"
             value={brushSize}
             onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="w-32"
+            className="w-40"
           />
-          <span className="text-slate-700 font-semibold">{brushSize}px</span>
+          <span className="font-bold text-blue-600">{brushSize}px</span>
         </div>
 
         {/* Clear Button */}
@@ -285,8 +293,13 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
       />
 
       {/* Status */}
-      <div className="bg-slate-800 text-white p-3 text-sm">
-        ✅ Drawing mode active • Share this session to collaborate • Drawings auto-sync
+      <div className="bg-slate-800 text-white p-4 flex items-center justify-between text-sm">
+        <div className="flex items-center gap-4">
+          <div>✅ <span className="font-semibold">Drawing active</span></div>
+          <div>👥 <span className="font-semibold">{activeUsers} user{activeUsers !== 1 ? "s" : ""}</span></div>
+          <div>🖌️ <span className="font-semibold">Size: {brushSize}px • {color}</span></div>
+        </div>
+        <div className="text-yellow-300">💡 All drawings sync in real-time</div>
       </div>
     </div>
   );
