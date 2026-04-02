@@ -42,8 +42,34 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
     // Listen for other users' drawings
     const currentSocket = getSocket();
     if (currentSocket) {
+      console.log("🎨 DrawingCanvas: Setting up socket listeners for session:", sessionId);
+      
+      // Listen for remote drawing strokes
       currentSocket.on("drawing-update", (data) => {
+        console.log("📨 Received drawing-update:", data);
         drawRemoteLine(data);
+      });
+
+      // Listen for canvas clear
+      currentSocket.on("drawing-cleared", (data) => {
+        console.log("🧹 Canvas cleared by:", data.userId);
+        if (contextRef.current && canvas) {
+          contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
+          canvasImageRef.current = null;
+        }
+      });
+
+      // Listen for presence updates
+      currentSocket.on("presence-list", (users) => {
+        console.log("👥 Updated presence:", users.length, "users");
+        setActiveUsers(users.length);
+      });
+
+      currentSocket.on("presence-update", (data) => {
+        console.log("👥 User presence update:", data);
+        if (data && data.users) {
+          setActiveUsers(data.users.length);
+        }
       });
     }
 
@@ -51,6 +77,9 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
       window.removeEventListener("resize", handleResize);
       if (currentSocket) {
         currentSocket.off("drawing-update");
+        currentSocket.off("drawing-cleared");
+        currentSocket.off("presence-list");
+        currentSocket.off("presence-update");
       }
     };
   }, [isOpen, sessionId]);
@@ -84,8 +113,8 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
 
     // Broadcast to other users
     const currentSocket = getSocket();
-    if (currentSocket) {
-      currentSocket.emit("drawing-stroke", {
+    if (currentSocket && currentSocket.connected) {
+      const strokeData = {
         sessionId,
         userId,
         fromX,
@@ -95,7 +124,17 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
         tool,
         color,
         brushSize,
-      });
+        timestamp: Date.now(),
+      };
+      console.log("📤 Emitting drawing-stroke:", strokeData);
+      currentSocket.emit("drawing-stroke", strokeData);
+    } else {
+      console.warn("⚠️ Socket not connected, drawing not synced");
+    }
+
+    // Store canvas state for new participants
+    if (canvasRef.current && contextRef.current) {
+      canvasImageRef.current = contextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
   };
 
@@ -165,14 +204,18 @@ const DrawingCanvas = ({ sessionId, userId, onClose, isOpen }) => {
   // Clear canvas
   const handleClear = () => {
     const canvas = canvasRef.current;
-    contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
+    if (contextRef.current && canvas) {
+      contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
+      canvasImageRef.current = null;
+    }
     
-    // Notify others
+    // Notify all users in session
     const currentSocket = getSocket();
-    if (currentSocket) {
+    if (currentSocket && currentSocket.connected) {
+      console.log("📤 Emitting drawing-clear to session:", sessionId);
       currentSocket.emit("drawing-clear", { sessionId, userId });
     }
-    toast.success("Canvas cleared");
+    toast.success("Canvas cleared for all");
   };
 
   // Download drawing
