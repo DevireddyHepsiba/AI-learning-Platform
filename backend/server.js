@@ -126,11 +126,17 @@ passport.use(new GoogleStrategy({
   callbackURL: `${process.env.API_BASE_URL}/auth/google/callback`,
 }, async (accessToken, refreshToken, profile, done) => {
   try {
-    console.log("🔍 Google profile received:", {
-      id: profile.id,
-      email: profile.emails?.[0]?.value,
-      displayName: profile.displayName,
-    });
+    const callbackURL = `${process.env.API_BASE_URL}/auth/google/callback`;
+    console.log(`
+🔐 GOOGLE OAUTH CONFIG:
+  clientID: ${process.env.GOOGLE_CLIENT_ID?.slice(0, 20)}...
+  callbackURL: ${callbackURL}
+  
+🔍 GOOGLE PROFILE RECEIVED:
+  id: ${profile.id}
+  email: ${profile.emails?.[0]?.value}
+  displayName: ${profile.displayName}
+    `);
 
     // ⚠️ Validate required fields
     if (!profile.id || !profile.emails || !profile.emails[0] || !profile.emails[0].value) {
@@ -222,9 +228,15 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ==================== GOOGLE OAUTH ROUTES (MUST BE FIRST) ==================== */
 // Step 1: Initiate Google authentication
-app.get("/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
+app.get("/auth/google", (req, res, next) => {
+  console.log(`
+🌐 GOOGLE AUTH INITIATED
+  API_BASE_URL: ${process.env.API_BASE_URL}
+  callbackURL: ${process.env.API_BASE_URL}/auth/google/callback
+  clientID: ${process.env.GOOGLE_CLIENT_ID?.slice(0, 20)}...
+  `);
+  next();
+}, passport.authenticate("google", { scope: ["profile", "email"] }));
 
 // Step 2: Google OAuth callback - with custom error handler
 const googleCallbackHandler = (req, res) => {
@@ -692,6 +704,41 @@ io.on("connection", (socket) => {
 
     socket.to(sessionId).emit("remote-cursor-leave", {
       socketId: socket.id,
+    });
+  });
+
+  /**
+   * Real-time collaborative drawing
+   */
+  socket.on("drawing-stroke", (data) => {
+    const { sessionId } = data || {};
+    if (!sessionId) return;
+
+    // Broadcast drawing stroke to all users in session except sender
+    socket.to(sessionId).emit("drawing-update", {
+      fromX: data.fromX,
+      fromY: data.fromY,
+      toX: data.toX,
+      toY: data.toY,
+      tool: data.tool,
+      color: data.color,
+      brushSize: data.brushSize,
+      userId: data.userId,
+      timestamp: Date.now(),
+    });
+  });
+
+  /**
+   * Clear canvas event
+   */
+  socket.on("drawing-clear", (data) => {
+    const { sessionId } = data || {};
+    if (!sessionId) return;
+
+    // Broadcast clear command to all users
+    socket.to(sessionId).emit("drawing-cleared", {
+      userId: data.userId,
+      timestamp: Date.now(),
     });
   });
 

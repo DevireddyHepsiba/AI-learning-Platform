@@ -7,6 +7,7 @@ import RemoteCursorLayer from "../../components/session/RemoteCursorLayer";
 import CommentsPanel from "../../components/session/CommentsPanel";
 import NotesPanel from "../../components/session/NotesPanel";
 import InviteModal from "../../components/session/InviteModal";
+import DrawingCanvas from "../../components/session/DrawingCanvas";
 import {
   initSocket,
   disconnectSocket,
@@ -36,6 +37,7 @@ import {
   Sparkles,
   Highlighter,
   Upload,
+  Paintbrush,
 } from "lucide-react";
 
 const CURSOR_COLORS = [
@@ -161,6 +163,7 @@ export default function SessionPage() {
   const [remoteCursors, setRemoteCursors] = useState({});
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [isDrawingOpen, setIsDrawingOpen] = useState(false);
 
   const localVideoRef = useRef(null);
   const peerConnectionsRef = useRef({});
@@ -1208,6 +1211,15 @@ export default function SessionPage() {
           </button>
 
           <button
+            onClick={() => setIsDrawingOpen(true)}
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-purple-300/30 bg-purple-400/10 text-purple-100 hover:bg-purple-400/20 transition text-xs md:text-sm flex-shrink-0"
+            title="Open collaborative drawing canvas"
+          >
+            <Paintbrush size={14} className="md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Draw</span>
+          </button>
+
+          <button
             onClick={handleDownloadNotes}
             className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-indigo-300/30 bg-indigo-400/10 text-indigo-100 hover:bg-indigo-400/20 transition text-xs md:text-sm flex-shrink-0"
             title="Download session notes"
@@ -1484,6 +1496,13 @@ export default function SessionPage() {
         sessionId={sessionId}
         sessionName={session.sessionName || session.documentName}
         documentName={session.documentName}
+      />
+
+      <DrawingCanvas
+        isOpen={isDrawingOpen}
+        onClose={() => setIsDrawingOpen(false)}
+        sessionId={sessionId}
+        userId={resolveSessionUserId(currentUser || user)}
       />
     </div>
   );
