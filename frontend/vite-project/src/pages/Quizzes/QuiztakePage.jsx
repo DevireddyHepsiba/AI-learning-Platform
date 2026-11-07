@@ -81,7 +81,7 @@ const QuiztakePage = () => {
   return (
     <AppShell>
       <div className="max-w-5xl mx-auto space-y-6">
-        <h1 className="text-4xl font-bold">{quiz.title}</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold break-words">{quiz.title}</h1>
 
         <div className="flex items-center justify-between text-slate-600">
           <p className="font-medium">Question {currentIndex + 1} of {quiz.questions.length}</p>
@@ -96,7 +96,7 @@ const QuiztakePage = () => {
           <p className="inline-flex px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-semibold">
             Question {currentIndex + 1}
           </p>
-          <h2 className="mt-4 text-3xl font-semibold">{question.question}</h2>
+          <h2 className="mt-4 text-2xl sm:text-3xl font-semibold break-words">{question.question}</h2>
 
           <div className="mt-6 space-y-3">
             {question.options.map((option) => {
@@ -111,23 +111,23 @@ const QuiztakePage = () => {
                       : "border-slate-300 hover:border-emerald-300"
                   }`}
                 >
-                  {option}
+                  <span className="block break-words">{option}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="quiz-navigation flex items-center justify-between">
           <button
             onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
             disabled={currentIndex === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 disabled:opacity-50"
+            className="quiz-prev inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-slate-300 disabled:opacity-50"
           >
             <ArrowLeft size={16} /> Previous
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="quiz-question-jump flex items-center gap-2">
             {quiz.questions.map((_, index) => (
               <button
                 key={index}
@@ -148,7 +148,7 @@ const QuiztakePage = () => {
           {currentIndex < quiz.questions.length - 1 ? (
             <button
               onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, quiz.questions.length - 1))}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white"
+              className="quiz-next inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white"
             >
               Next <ArrowRight size={16} />
             </button>
@@ -156,7 +156,7 @@ const QuiztakePage = () => {
             <button
               onClick={handleSubmitQuiz}
               disabled={submitting}
-              className="px-5 py-2 rounded-xl bg-emerald-500 text-white font-semibold disabled:opacity-60"
+              className="quiz-next px-5 py-2 rounded-xl bg-emerald-500 text-white font-semibold disabled:opacity-60"
             >
               {submitting ? "Submitting..." : "Submit Quiz"}
             </button>

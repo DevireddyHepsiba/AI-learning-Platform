@@ -48,8 +48,8 @@ export default function InviteModal({ isOpen, onClose, sessionId, sessionName, d
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-96 p-6">
+    <div className="fixed inset-0 bg-black/55 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="invite-modal bg-white rounded-3xl shadow-2xl w-full max-w-md p-5 sm:p-7 max-h-[90dvh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-800">Invite to Study Session</h2>

@@ -353,7 +353,7 @@ const DocumentDetailPage = () => {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="document-detail-page space-y-6">
         <button
           onClick={() => navigate("/documents")}
           className="inline-flex items-center gap-2 text-slate-600 hover:text-emerald-600 text-xs md:text-base"
@@ -362,7 +362,7 @@ const DocumentDetailPage = () => {
         </button>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">{documentData.title}</h1>
+          <div className="min-w-0 flex-1"><div className="eyebrow"><span className="eyebrow-dot" /> DOCUMENT WORKSPACE</div><h1 className="mt-2 text-2xl md:text-4xl lg:text-5xl font-bold leading-tight break-words">{documentData.title}</h1></div>
           <span
             className={`px-3 py-1 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap shrink-0 ${
               isDocumentReady ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"

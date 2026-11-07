@@ -93,8 +93,8 @@ Return ONLY valid JSON.
 [
   {
     "question": "string",
-    "options": ["A", "B", "C", "D"],
-    "correctAnswer": "A",
+    "options": ["first option text", "second option text", "third option text", "fourth option text"],
+    "correctAnswer": "exact text of one option",
     "explanation": "string",
     "difficulty": "easy | medium | hard"
   }
@@ -102,6 +102,8 @@ Return ONLY valid JSON.
 
 TEXT:
 ${normalizedText.substring(0, 15000)}
+
+Each option must be a complete answer choice, not just the letter A, B, C, or D. Set correctAnswer to the exact text of the matching option.
 `;
 
   const response = await ai.models.generateContent({

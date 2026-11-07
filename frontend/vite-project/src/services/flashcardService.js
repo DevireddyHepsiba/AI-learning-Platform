@@ -79,6 +79,21 @@ const deleteFlashcardSet = async (id) => {
 };
 
 // ================================
+// DELETE INDIVIDUAL FLASHCARD
+// ================================
+const deleteFlashcard = async (cardId) => {
+  try {
+    const response = await axiosInstance.delete(
+      API_PATHS.FLASHCARDS.DELETE_FLASHCARD(cardId)
+    );
+
+    return response.data;
+  } catch (error) {
+    throw normalizeError(error, "Failed to delete flashcard");
+  }
+};
+
+// ================================
 // EXPORT SERVICE
 // ================================
 const flashcardService = {
@@ -87,6 +102,7 @@ const flashcardService = {
   reviewFlashcard,
   toggleStar,
   deleteFlashcardSet,
+  deleteFlashcard,
 };
 
 export default flashcardService;

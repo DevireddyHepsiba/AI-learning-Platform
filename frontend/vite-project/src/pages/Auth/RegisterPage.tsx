@@ -70,7 +70,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-cyan-50 flex items-center justify-center p-4">
+    <div className="auth-page min-h-screen bg-gradient-to-br from-slate-50 to-cyan-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
@@ -78,7 +78,7 @@ const RegisterPage = () => {
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl shadow-cyan-500/10 border border-white/20 p-8">
+        <div className="auth-panel backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl shadow-cyan-500/10 border border-white/20 p-8">
           <div className="text-center mb-10">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-500 to-emerald-600 rounded-2xl shadow-lg mb-6">
               <BrainCircuit className="w-8 h-8 text-white" strokeWidth={2.5} />

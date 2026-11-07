@@ -12,6 +12,7 @@
   "type": "module",
   "description": "",
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.2",
     "@google/genai": "^1.35.0",
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.3",
@@ -20,6 +21,7 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "express-validator": "^7.3.1",
+    "google-auth-library": "^11.0.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
     "multer": "^2.0.2",

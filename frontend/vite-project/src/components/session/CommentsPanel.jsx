@@ -60,7 +60,7 @@ export default function CommentsPanel({
   };
 
   return (
-    <div className="fixed right-0 top-0 h-full w-full sm:w-96 md:w-96 lg:w-80 bg-white shadow-xl flex flex-col border-l border-gray-200 z-50 animate-in slide-in-from-right">
+    <div className="comments-panel fixed inset-x-0 bottom-0 top-auto h-[min(82dvh,720px)] w-full rounded-t-3xl border-x-0 border-t bg-white shadow-2xl flex flex-col border-gray-200 z-50 sm:inset-y-0 sm:left-auto sm:top-0 sm:right-0 sm:h-full sm:w-[400px] sm:rounded-none sm:border-l sm:border-t-0 xl:w-80">
       {/* Header */}
       <div className="p-3 md:p-4 border-b border-gray-200 flex items-center justify-between bg-linear-to-r from-blue-50 to-blue-100 gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import authService from "../../services/authService";
@@ -16,6 +16,29 @@ const LoginPage = () => {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const userParam = params.get("user");
+
+    if (!token) return;
+
+    try {
+      const user = userParam ? JSON.parse(userParam) : null;
+      if (user) {
+        login(user, token);
+      } else {
+        localStorage.setItem("token", token);
+      }
+      toast.success("🎉 Google login successful!");
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      console.error("Google login callback parse error:", err);
+      localStorage.setItem("token", token);
+      navigate("/dashboard", { replace: true });
+    }
+  }, [login, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,7 +75,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center p-4">
+    <div className="auth-page min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center p-4">
       {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-40 md:w-60 lg:w-80 h-40 md:h-60 lg:h-80 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
@@ -63,7 +86,7 @@ const LoginPage = () => {
       {/* Card */}
       <div className="relative w-full max-w-md">
         {/* Glass Effect Card */}
-        <div className="backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl shadow-emerald-500/10 border border-white/20 p-6 md:p-8">
+        <div className="auth-panel backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl shadow-emerald-500/10 border border-white/20 p-6 md:p-8">
           {/* Header */}
           <div className="text-center mb-8 md:mb-10">
             <div className="inline-flex items-center justify-center w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg mb-4 md:mb-6">

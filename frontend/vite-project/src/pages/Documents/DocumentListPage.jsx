@@ -93,9 +93,10 @@ const DocumentListPage = () => {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="documents-page space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
+            <div className="eyebrow"><span className="eyebrow-dot" /> YOUR LEARNING LIBRARY</div>
             <h1 className="text-2xl md:text-4xl font-bold tracking-tight">My Documents</h1>
             <p className="text-slate-500 mt-1 text-sm md:text-base">Manage and organize your learning materials</p>
           </div>

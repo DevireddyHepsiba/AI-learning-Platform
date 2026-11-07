@@ -1,7 +1,14 @@
 const errorHandler = (err, req, res, next) => {
-  res.status(err.statusCode || 500).json({
+  const statusCode = err.statusCode || err.status || 500;
+  const message = err.message || "Server error";
+  
+  console.error(`[Error Handler] ${statusCode}: ${message}`);
+  console.error("Error Details:", err);
+  
+  res.status(statusCode).json({
     success: false,
-    error: err.message || "Server error",
+    error: message,
+    ...(process.env.NODE_ENV === "development" && { details: err.toString() }),
   });
 };
 

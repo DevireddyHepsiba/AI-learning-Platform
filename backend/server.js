@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
+console.log("API BASE URL FROM ENV:", process.env.API_BASE_URL);
+console.log("FRONTEND URL FROM ENV:", process.env.FRONTEND_URL);
 
 import express from "express";
 import cors from "cors";
@@ -13,16 +15,17 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
 
 import connectDB from "./config/db.js";
-import User from "./models/User.js";
-import authRoutes from "./routes/authRoutes.js";
-import sessionRoutes from "./routes/sessionRoutes.js";
+import User from "./auth/models/User.js";
+import { generateToken } from "./auth/utils/jwt.js";
+import authRoutes from "./auth/routes/authRoutes.js";
+import sessionRoutes from "./session/routes/sessionRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
-import documentationRoutes from "./routes/documentRoutes.js";
-import flashcardRoutes from "./routes/flashcardRoutes.js";
-import aiRoutes from "./routes/aiRoutes.js";
-import quizRoutes from './routes/quizRoutes.js';
-import progressRoutes from './routes/progressRoutes.js';
-import notificationRoutes from "./routes/notificationRoutes.js";
+import documentationRoutes from "./document/routes/documentRoutes.js";
+import flashcardRoutes from "./Flashcard/routes/flashcardRoutes.js";
+import aiRoutes from "./AI/routes/aiRoutes.js";
+import quizRoutes from './Quiz/routes/quizRoutes.js';
+import progressRoutes from './progress/routes/progressRoutes.js';
+import notificationRoutes from "./notification/routes/notificationRoutes.js";
 import Highlight from "./models/Highlight.js";
 import Comment from "./models/Comment.js";
 import SessionNotes from "./models/SessionNotes.js";
@@ -37,6 +40,8 @@ const configuredOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+  
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
@@ -94,8 +99,18 @@ const getPresenceList = (sessionId) => {
   return Array.from(dedup.values());
 };
 
-/* Connect DB */
-connectDB();
+/* Connect DB and start server only after DB is ready */
+const start = async () => {
+  try {
+    await connectDB();
+    if (typeof startServer === "function") startServer();
+  } catch (err) {
+    console.error("Exiting: failed to connect to MongoDB.");
+    process.exit(1);
+  }
+};
+
+start();
 
 /* Middlewares */
 app.use(cors(corsOptions));
@@ -144,28 +159,58 @@ passport.use(new GoogleStrategy({
       return done(new Error("Google profile missing email or ID"));
     }
 
-    // Find or create user
+    const email = profile.emails?.[0]?.value?.trim().toLowerCase();
+    const profileImage = profile.photos?.[0]?.value || "";
+
     let user = await User.findOne({ googleId: profile.id });
-    
-    if (!user) {
-      // Create new user from Google profile
-      const email = profile.emails[0].value;
-      const username = profile.displayName || email.split("@")[0];
-      
+
+    if (!user && email) {
+      user = await User.findOne({ email });
+    }
+
+    if (user) {
+      let needsSave = false;
+
+      if (!user.googleId) {
+        user.googleId = profile.id;
+        needsSave = true;
+      }
+
+      if (!user.profileImage && profileImage) {
+        user.profileImage = profileImage;
+        needsSave = true;
+      }
+
+      if (needsSave) {
+        await user.save();
+      }
+
+      console.log("✅ User found and linked via Google OAuth:", user._id, user.email);
+    } else {
+      let usernameBase = (profile.displayName || email?.split("@")[0] || "googleuser")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "");
+
+      let username = usernameBase;
+      let suffix = 1;
+
+      while (await User.exists({ username })) {
+        username = `${usernameBase}${suffix}`;
+        suffix += 1;
+      }
+
       user = new User({
         googleId: profile.id,
-        email: email,
-        username: username,
-        profileImage: profile.photos?.[0]?.value || null,
-        password: null, // OAuth users don't have password
+        email,
+        username,
+        profileImage,
       });
-      
+
       await user.save();
       console.log("✅ New user created via Google OAuth:", user._id, user.email);
-    } else {
-      console.log("✅ User found via Google OAuth:", user._id, user.email);
     }
-    
+
     return done(null, user);
   } catch (error) {
     console.error("❌ Google OAuth Strategy error:", error.message);
@@ -181,9 +226,21 @@ passport.serializeUser((user, done) => {
 /* Deserialize user from session */
 passport.deserializeUser(async (id, done) => {
   try {
+    if (!id) {
+      console.warn("[Passport] No user ID provided for deserialization");
+      return done(null, null);
+    }
+    
     const user = await User.findById(id);
+    if (!user) {
+      console.warn(`[Passport] User not found with ID: ${id}`);
+      return done(null, null);
+    }
+    
+    console.log(`[Passport] User deserialized: ${user._id}`);
     done(null, user);
   } catch (error) {
+    console.error(`[Passport] Deserialization error: ${error.message}`);
     done(error);
   }
 });
@@ -235,33 +292,78 @@ app.get("/auth/google", (req, res, next) => {
   callbackURL: ${process.env.API_BASE_URL}/auth/google/callback
   clientID: ${process.env.GOOGLE_CLIENT_ID?.slice(0, 20)}...
   `);
-  next();
+
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    console.error("❌ Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in .env");
+    return res.status(500).json({ success: false, error: "OAuth not configured" });
+  }
+
+  return next();
 }, passport.authenticate("google", { scope: ["profile", "email"] }));
 
-// Step 2: Google OAuth callback - with custom error handler
 const googleCallbackHandler = (req, res) => {
   try {
-    // ✅ User authenticated successfully
+    console.log("📍 Google callback route hit");
+    console.log("🔍 OAuth Callback - Checking user...");
+    console.log("req.user:", req.user ? `${req.user._id} (${req.user.email})` : "undefined");
+    console.log("req.isAuthenticated():", req.isAuthenticated());
+
     if (!req.user) {
       console.error("❌ No user found after Passport authentication");
-      return res.status(400).json({ success: false, error: "User not found after authentication" });
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/login?error=no_user`);
     }
 
     console.log("✅ Google OAuth successful, user:", req.user._id, req.user.email);
-    
-    // Redirect to frontend dashboard
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     return res.redirect(`${frontendUrl}/dashboard?authenticated=true`);
   } catch (error) {
-    console.error("❌ OAuth callback handler error:", error.message);
-    return res.status(500).json({ success: false, error: error.message || "OAuth callback failed" });
+    console.error("❌ OAuth callback handler error:", error);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error.message || "Authentication failed")}`);
   }
 };
 
-app.get("/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/?error=oauth_failed" }),
-  googleCallbackHandler
+app.get(
+  "/auth/google/callback",
+  (req, res, next) => {
+    console.log("📍 GOOGLE CALLBACK START");
+    console.log("Query:", req.query);
+    console.log("Session user before auth:", req.user || "none");
+    return next();
+  },
+  passport.authenticate("google", {
+    session: true,
+    failureRedirect: "/auth/google/failure",
+  }),
+  (req, res) => {
+    console.log("✅ GOOGLE CALLBACK SUCCESS");
+    console.log("Authenticated user:", req.user ? { id: req.user._id, email: req.user.email } : "none");
+
+    const token = generateToken(req.user._id);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const userPayload = {
+      id: req.user._id,
+      username: req.user.username,
+      email: req.user.email,
+      profileImage: req.user.profileImage,
+    };
+
+    const params = new URLSearchParams({
+      token,
+      user: JSON.stringify(userPayload),
+    });
+
+    return res.redirect(`${frontendUrl}/login?${params.toString()}`);
+  }
 );
+
+// OAuth failure handler
+app.get("/auth/google/failure", (req, res) => {
+  console.error("❌ Google OAuth authentication failed");
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
+});
 
 // Get current user (protected)
 app.get("/auth/user", (req, res) => {
@@ -311,6 +413,7 @@ io.on("connection", (socket) => {
   socket.on("join-session", async ({ sessionId, userId, username }) => {
     try {
       if (!sessionId || !userId) {
+        console.error("[Socket] Missing required params:", { sessionId, userId });
         socket.emit("error", { message: "sessionId and userId are required" });
         return;
       }
@@ -318,9 +421,14 @@ io.on("connection", (socket) => {
       const normalizedUserId = String(userId).trim();
       const normalizedUsername = String(username || "").trim() || `Guest-${normalizedUserId.slice(-4)}`;
 
+      console.log(`[Socket] Join request - session: ${sessionId}, user: ${normalizedUserId}, name: ${normalizedUsername}`);
+
+      // Check if already in this session (re-join attempt)
       const sameSession = String(socket.data?.sessionId || "") === String(sessionId);
       const sameUser = String(socket.data?.userId || "") === normalizedUserId;
+      
       if (sameSession && sameUser) {
+        console.log(`[Socket] User ${normalizedUsername} already in session ${sessionId}, updating presence`);
         if (!sessionPresence.has(sessionId)) {
           sessionPresence.set(sessionId, new Map());
         }
@@ -331,7 +439,14 @@ io.on("connection", (socket) => {
         });
 
         socket.emit("presence-update", { users: getPresenceList(sessionId) });
+        socket.emit("join-success", { message: "Already in session" });
         return;
+      }
+
+      // Leave previous session if any
+      if (socket.data?.sessionId && socket.data.sessionId !== sessionId) {
+        console.log(`[Socket] Leaving previous session: ${socket.data.sessionId}`);
+        socket.leave(socket.data.sessionId);
       }
 
       socket.join(sessionId);
@@ -400,6 +515,14 @@ io.on("connection", (socket) => {
           })),
         });
       }
+
+      // Send success confirmation
+      socket.emit("join-success", {
+        message: "Successfully joined session",
+        sessionId,
+        socketId: socket.id,
+      });
+      console.log(`[Socket] ✅ ${normalizedUsername} successfully joined ${sessionId}`);
     } catch (error) {
       console.error("[Socket] Join session error:", error);
       socket.emit("error", { message: "Failed to join session: " + error.message });
@@ -736,8 +859,68 @@ io.on("connection", (socket) => {
     if (!sessionId) return;
 
     // Broadcast clear command to all users
-    socket.to(sessionId).emit("drawing-cleared", {
+    socket.to(sessionId).emit("drawing-clear", {
       userId: data.userId,
+      timestamp: Date.now(),
+    });
+  });
+
+  /**
+   * Undo drawing event
+   */
+  socket.on("drawing-undo", (data) => {
+    const { sessionId } = data || {};
+    if (!sessionId) return;
+
+    // Broadcast undo command to all users
+    socket.to(sessionId).emit("drawing-undo", {
+      userId: data.userId,
+      timestamp: Date.now(),
+    });
+  });
+
+  /**
+   * Drawing board opened event - broadcast to all users in session
+   */
+  socket.on("drawing-board-open", (data) => {
+    const { sessionId, userId } = data || {};
+    
+    console.log("=== [BACKEND] Drawing Board Open Event ===");
+    console.log("Received from:", { socketId: socket.id, userId, sessionId });
+    console.log("Socket data:", socket.data);
+    
+    if (!sessionId) {
+      console.warn("[Drawing] ❌ Missing sessionId in drawing-board-open event");
+      return;
+    }
+
+    console.log(`[Drawing] ✅ Broadcasting drawing-board-opened to session: ${sessionId}`);
+    console.log(`[Drawing] ✅ From user: ${userId}, Socket: ${socket.id}`);
+
+    // Broadcast to all OTHER users that drawing board was opened
+    socket.to(sessionId).emit("drawing-board-opened", {
+      userId,
+      timestamp: Date.now(),
+    });
+
+    console.log(`[Drawing] ✅ Broadcast complete for session: ${sessionId}`);
+  });
+
+  /**
+   * Drawing board closed event
+   */
+  socket.on("drawing-board-close", (data) => {
+    const { sessionId, userId } = data || {};
+    if (!sessionId) {
+      console.warn("[Drawing] ❌ Missing sessionId in drawing-board-close event");
+      return;
+    }
+
+    console.log(`[Drawing] ✅ User ${userId} closed drawing board in session ${sessionId}`);
+
+    // Broadcast to all OTHER users that drawing board was closed
+    socket.to(sessionId).emit("drawing-board-closed", {
+      userId,
       timestamp: Date.now(),
     });
   });
@@ -807,9 +990,20 @@ app.use((req, res) => {
 /* Error handler */
 app.use(errorHandler);
 
-/* Start server */
+/* Start server only after DB ready (started in start()) */
 const PORT = process.env.PORT || 8000;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`[Socket.io] Ready for WebSocket connections`);
-});
+const startServer = () => {
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`[Socket.io] Ready for WebSocket connections`);
+  });
+};
+
+// If DB already connected earlier, start immediately; otherwise start() will call this after connecting.
+if (process.env.SKIP_DB_START !== "true") {
+  // start() was called above and will start the server after DB connect
+} else {
+  startServer();
+}
+
+export { startServer };

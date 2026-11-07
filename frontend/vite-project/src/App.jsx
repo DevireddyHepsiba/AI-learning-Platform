@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from "./context/AuthContext";
+import { BrainCircuit, Loader2 } from 'lucide-react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -29,8 +30,12 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Loading...</p>
+      <div className="app-loading-screen">
+        <div className="app-loading-card">
+          <span className="brand-mark"><BrainCircuit size={22} /></span>
+          <Loader2 size={18} className="animate-spin" />
+          <p>Making a little room for you…</p>
+        </div>
       </div>
     );
   }

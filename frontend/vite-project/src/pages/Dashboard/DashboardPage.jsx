@@ -1,47 +1,39 @@
-import { BookOpen, Brain, ClipboardList, Loader2, Users } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, BrainCircuit, Check, Clock3, FileText, Layers3, Loader2, Sparkles, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import AppShell from "../../components/auth/layout/AppShell";
 import CreateSessionModal from "../../components/session/CreateSessionModal";
 import progressService from "../../services/progressService";
 
-const StatCard = ({ label, value, icon: Icon, tone }) => (
-  <div className="rounded-2xl bg-white border border-slate-200 p-4 md:p-6 shadow-sm">
-    <div className="flex items-center justify-between">
-      <p className="text-slate-500 text-xs md:text-sm font-semibold uppercase tracking-wide">{label}</p>
-      <div className={`h-10 md:h-11 w-10 md:w-11 rounded-xl grid place-items-center ${tone}`}>
-        <Icon size={18} />
-      </div>
-    </div>
-    <p className="mt-3 md:mt-4 text-3xl md:text-5xl font-bold text-slate-900">{value}</p>
-  </div>
-);
+const statConfig = [
+  { key: "totalDocuments", label: "Documents", icon: FileText, tone: "stat-lilac", link: "/documents" },
+  { key: "totalFlashcards", label: "Flashcards", icon: Layers3, tone: "stat-mint", link: "/flashcards" },
+  { key: "totalQuizzes", label: "Quizzes", icon: BrainCircuit, tone: "stat-peach", link: "/documents" },
+];
+
+const formatDate = (dateString) => {
+  if (!dateString) return "Date unavailable";
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+};
 
 const DashboardPage = () => {
   const [searchParams] = useSearchParams();
-  const { loginWithOAuth } = useAuth();
+  const { user, loginWithOAuth } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
 
-  // ✅ Handle OAuth callback
   useEffect(() => {
     const authenticated = searchParams.get("authenticated");
-    if (authenticated === "true") {
-      const handleOAuthLogin = async () => {
-        const success = await loginWithOAuth();
-        if (success) {
-          console.log("✅ OAuth login successful");
-          // Remove the query param
-          window.history.replaceState({}, document.title, window.location.pathname);
-        } else {
-          console.error("❌ OAuth login failed");
-        }
-      };
-      handleOAuthLogin();
-    }
+    if (authenticated !== "true") return;
+    const handleOAuthLogin = async () => {
+      const success = await loginWithOAuth();
+      if (success) window.history.replaceState({}, document.title, window.location.pathname);
+    };
+    handleOAuthLogin();
   }, [searchParams, loginWithOAuth]);
 
   useEffect(() => {
@@ -51,109 +43,61 @@ const DashboardPage = () => {
         const response = await progressService.getDashboardData();
         setDashboardData(response?.data || response);
       } catch (err) {
-        setError(err?.error || err?.message || "Failed to load dashboard");
+        setError(err?.error || err?.message || "We couldn't load your learning overview.");
       } finally {
         setLoading(false);
       }
     };
-
     loadDashboard();
   }, []);
 
   const recentItems = useMemo(() => {
     if (!dashboardData?.recentActivity) return [];
-    const docs = (dashboardData.recentActivity.documents || []).map((d) => ({
-      id: d._id,
-      label: `Accessed Document: ${d.title}`,
-      timestamp: d.lastAccessed || d.updatedAt || d.createdAt,
-      type: "document",
-    }));
-    const quizzes = (dashboardData.recentActivity.quizzes || []).map((q) => ({
-      id: q._id,
-      label: `Completed Quiz: ${q.title}`,
-      timestamp: q.completedAt || q.createdAt,
-      type: "quiz",
-    }));
-
-    return [...docs, ...quizzes]
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 6);
+    const docs = (dashboardData.recentActivity.documents || []).map((doc) => ({ id: doc._id, label: doc.title, detail: "Opened a document", timestamp: doc.lastAccessed || doc.updatedAt || doc.createdAt, type: "document", to: `/documents/${doc._id}` }));
+    const quizzes = (dashboardData.recentActivity.quizzes || []).map((quiz) => ({ id: quiz._id, label: quiz.title, detail: "Completed a quiz", timestamp: quiz.completedAt || quiz.createdAt, type: "quiz", to: `/quizzes/${quiz._id}/results` }));
+    return [...docs, ...quizzes].filter((item) => item.timestamp).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
   }, [dashboardData]);
 
   const overview = dashboardData?.overview || {};
+  const firstName = (user?.username || user?.name || "friend").split(/[\s@]/)[0];
+  const dayPart = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(new Date());
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-          <div className="flex-1">
-            <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-            <p className="text-xs md:text-sm text-slate-500 mt-1">Track your learning progress and activity</p>
-          </div>
-
-          <button
-            onClick={() => setIsCreateSessionOpen(true)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 md:px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-md text-sm md:text-base whitespace-nowrap"
-          >
-            <Users size={18} /> <span className="hidden xs:inline">Create</span> Study Session
-          </button>
+      <div className="dashboard-page">
+        <div className="dashboard-heading">
+          <div><div className="eyebrow"><span className="eyebrow-dot" /> {dayPart.toUpperCase()} · YOUR LEARNING SPACE</div><h1>Good to see you, <em>{firstName}.</em></h1><p>Pick up a thread, or start somewhere new. You’re right on time.</p></div>
+          <button onClick={() => setIsCreateSessionOpen(true)} className="button button-dark"><UsersRound size={17} /> Study with someone <ArrowRight size={15} /></button>
         </div>
 
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 flex items-center justify-center gap-3 text-slate-600">
-            <Loader2 className="animate-spin" size={20} /> Loading dashboard...
-          </div>
+          <div className="dashboard-state"><Loader2 className="animate-spin" size={20} /> Gathering your learning space…</div>
         ) : error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">{error}</div>
+          <div className="dashboard-error"><span>{error}</span><button onClick={() => window.location.reload()}>Try again <ArrowRight size={14} /></button></div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <StatCard
-                label="Total Documents"
-                value={overview.totalDocuments || 0}
-                icon={BookOpen}
-                tone="bg-sky-100 text-sky-600"
-              />
-              <StatCard
-                label="Total Flashcards"
-                value={overview.totalFlashcards || 0}
-                icon={Brain}
-                tone="bg-fuchsia-100 text-fuchsia-600"
-              />
-              <StatCard
-                label="Total Quizzes"
-                value={overview.totalQuizzes || 0}
-                icon={ClipboardList}
-                tone="bg-emerald-100 text-emerald-600"
-              />
+            <div className="dashboard-stats">
+              {statConfig.map(({ key, label, icon: Icon, tone, link }) => <Link to={link} key={key} className="dashboard-stat"><span className={`stat-icon ${tone}`}><Icon size={19} /></span><span className="stat-label">{label}</span><strong>{overview[key] || 0}</strong><span className="stat-footer">In your learning space <ArrowUpRight size={14} /></span></Link>)}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-              <h2 className="text-lg md:text-2xl font-semibold text-slate-900">Recent Activity</h2>
-              <div className="mt-4 md:mt-5 space-y-2 md:space-y-3">
-                {recentItems.length === 0 ? (
-                  <p className="text-slate-500 text-sm">No activity yet.</p>
-                ) : (
-                  recentItems.map((item) => (
-                    <div key={`${item.type}-${item.id}`} className="border border-slate-200 rounded-xl p-3 md:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-800 text-sm md:text-base truncate">{item.label}</p>
-                        <p className="text-xs md:text-sm text-slate-500">{new Date(item.timestamp).toLocaleString()}</p>
-                      </div>
-                      <span className="text-xs md:text-sm font-semibold text-emerald-600 whitespace-nowrap">View</span>
-                    </div>
-                  ))
-                )}
-              </div>
+            <div className="dashboard-main-grid">
+              <section className="continue-card">
+                <div className="continue-art"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="continue-art-center"><BookOpen size={32} strokeWidth={1.5}/></div><span className="art-spark art-spark-one">✳</span><span className="art-spark art-spark-two">✦</span><span className="art-label">KEEP EXPLORING</span></div>
+                <div className="continue-copy"><span className="continue-kicker"><Sparkles size={13}/> YOUR NEXT SMALL STEP</span><h2>Curiosity is a good place to start.</h2><p>Your library is waiting whenever you’re ready to make sense of something new.</p><Link to="/documents" className="text-link">Visit your library <ArrowRight size={15}/></Link></div>
+              </section>
+
+              <section className="activity-card">
+                <div className="card-heading"><div><span className="card-kicker">A LITTLE RECAP</span><h2>Recent activity</h2></div><Clock3 size={18} className="muted-icon"/></div>
+                {recentItems.length === 0 ? <div className="activity-empty"><span className="empty-icon"><Sparkles size={18}/></span><p>Your story starts here.</p><small>Open a document to see it appear in your recent activity.</small><Link to="/documents" className="text-link">Go to your library <ArrowRight size={14}/></Link></div> : <div className="activity-list">{recentItems.map((item) => <Link to={item.to} key={`${item.type}-${item.id}`} className="activity-item"><span className={`activity-icon ${item.type === "document" ? "activity-document" : "activity-quiz"}`}>{item.type === "document" ? <FileText size={17}/> : <Check size={17}/>}</span><span className="activity-copy"><strong>{item.label || item.detail}</strong><small>{item.detail} · {formatDate(item.timestamp)}</small></span><ArrowUpRight size={15} className="activity-arrow"/></Link>)}</div>}
+              </section>
             </div>
+
+            <section className="dashboard-nudge"><span className="nudge-mark"><Sparkles size={17}/></span><span><strong>Learning isn’t a race.</strong><small>A few focused minutes today can make tomorrow feel easier.</small></span><span className="nudge-check">ONE STEP AT A TIME</span></section>
           </>
         )}
       </div>
 
-      <CreateSessionModal
-        isOpen={isCreateSessionOpen}
-        onClose={() => setIsCreateSessionOpen(false)}
-      />
+      <CreateSessionModal isOpen={isCreateSessionOpen} onClose={() => setIsCreateSessionOpen(false)} />
     </AppShell>
   );
 };

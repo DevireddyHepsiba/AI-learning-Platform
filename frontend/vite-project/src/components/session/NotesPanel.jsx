@@ -43,9 +43,9 @@ export default function NotesPanel({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-gray-200">
+    <div className="notes-panel flex flex-col h-full bg-white border-l border-gray-200">
       {/* Header */}
-      <div className="p-3 md:p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100">
+      <div className="notes-panel-header p-3 md:p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100">
         <div className="flex items-center gap-2 min-w-0">
           <FileText size={18} className="text-green-600 shrink-0" />
           <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">Shared Notes</h3>

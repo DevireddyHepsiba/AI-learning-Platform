@@ -126,6 +126,30 @@ const FlashcardPage = () => {
     }
   };
 
+  const handleDeleteCard = async () => {
+    if (!selectedCard?._id) return;
+    try {
+      await flashcardService.deleteFlashcard(selectedCard._id);
+      toast.success("Flashcard deleted");
+      
+      setSets((prev) =>
+        prev.map((set) => {
+          if (set._id !== selectedSetId) return set;
+          const updatedCards = set.cards.filter((card) => card._id !== selectedCard._id);
+          return { ...set, cards: updatedCards };
+        })
+      );
+
+      // Move to next card or previous if we're at the end
+      if (currentIndex >= selectedSet.cards.length - 1) {
+        setCurrentIndex(Math.max(currentIndex - 1, 0));
+      }
+      setShowAnswer(false);
+    } catch {
+      toast.error("Failed to delete flashcard");
+    }
+  };
+
   const handleDeleteSet = async () => {
     if (!selectedSet?._id) return;
     try {
@@ -154,8 +178,8 @@ const FlashcardPage = () => {
   if (!isStudyMode) {
     return (
       <AppShell>
-        <div className="space-y-6">
-          <h1 className="text-4xl font-bold">Flashcards</h1>
+        <div className="flashcards-page space-y-6">
+          <div className="page-intro"><div className="eyebrow"><span className="eyebrow-dot" /> ACTIVE RECALL</div><h1 className="text-4xl font-bold">Flashcards</h1><p>Small rounds of practice make new ideas easier to keep.</p></div>
 
           {sets.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-10 text-slate-500">
@@ -170,8 +194,24 @@ const FlashcardPage = () => {
 
                 return (
                   <div key={set._id} className="rounded-2xl border border-slate-200 bg-white p-5 hover:border-emerald-300 hover:shadow-sm transition-all">
-                    <div className="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 grid place-items-center">
-                      <BookOpen size={22} />
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 grid place-items-center flex-shrink-0">
+                        <BookOpen size={22} />
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await flashcardService.deleteFlashcardSet(set._id);
+                            toast.success("Flashcard set deleted");
+                            setSets((prev) => prev.filter((s) => s._id !== set._id));
+                          } catch {
+                            toast.error("Failed to delete set");
+                          }
+                        }}
+                        className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex-shrink-0"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
 
                     <h3 className="mt-4 text-2xl font-semibold leading-tight line-clamp-2">{title || "Flashcard Set"}</h3>
@@ -223,7 +263,7 @@ const FlashcardPage = () => {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="flashcard-study-page space-y-6">
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={() => navigate(`/documents/${documentId}`)}
@@ -242,18 +282,23 @@ const FlashcardPage = () => {
 
         <h1 className="text-4xl font-bold">Flashcards</h1>
 
-        <div className="max-w-xl mx-auto rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="flashcard-study-card max-w-2xl mx-auto rounded-2xl border border-slate-200 bg-white p-5 sm:p-8 text-center shadow-sm">
           <div className="flex items-center justify-between">
             <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 uppercase">{selectedCard.difficulty || "medium"}</span>
-            <button onClick={handleToggleStar} className={`p-2 rounded-lg ${selectedCard.isStarred ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-500"}`}>
-              <Star size={16} fill={selectedCard.isStarred ? "currentColor" : "none"} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={handleToggleStar} className={`p-2 rounded-lg ${selectedCard.isStarred ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-500"}`}>
+                <Star size={16} fill={selectedCard.isStarred ? "currentColor" : "none"} />
+              </button>
+              <button onClick={handleDeleteCard} className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
 
-          <p className="mt-12 text-3xl font-semibold leading-relaxed">{selectedCard.question}</p>
+          <p className="mt-8 sm:mt-12 text-xl sm:text-3xl font-semibold leading-relaxed break-words">{selectedCard.question}</p>
 
           {showAnswer ? (
-            <div className="mt-8 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 text-lg">
+            <div className="mt-8 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 text-base sm:text-lg break-words">
               {selectedCard.answer}
             </div>
           ) : (
@@ -261,7 +306,7 @@ const FlashcardPage = () => {
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-4">
+        <div className="flashcard-navigation flex items-center justify-center gap-3 sm:gap-4">
           <button
             onClick={() => {
               setShowAnswer(false);

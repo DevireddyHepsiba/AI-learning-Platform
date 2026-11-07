@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, memo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import PDFViewer from "../../components/session/PDFViewer";
@@ -7,7 +7,7 @@ import RemoteCursorLayer from "../../components/session/RemoteCursorLayer";
 import CommentsPanel from "../../components/session/CommentsPanel";
 import NotesPanel from "../../components/session/NotesPanel";
 import InviteModal from "../../components/session/InviteModal";
-import DrawingCanvas from "../../components/session/DrawingCanvas";
+import FloatingDrawingBoard from "../../components/session/FloatingDrawingBoard";
 import {
   initSocket,
   disconnectSocket,
@@ -85,7 +85,21 @@ const isSameComment = (a, b) => {
   );
 };
 
-function RemoteMediaTile({ stream, username, camOn = true, micOn = true }) {
+function ActionButton({ onClick, title, className = "", disabled = false, children }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={title}
+      className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg transition text-xs md:text-sm shrink-0 ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RemoteMediaTileInner({ stream, username, camOn = true, micOn = true }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -127,6 +141,8 @@ function RemoteMediaTile({ stream, username, camOn = true, micOn = true }) {
   );
 }
 
+const RemoteMediaTile = memo(RemoteMediaTileInner);
+
 export default function SessionPage() {
   const { sessionId } = useParams();
   const { user } = useAuth();
@@ -161,7 +177,7 @@ export default function SessionPage() {
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [pdfUpdateNotice, setPdfUpdateNotice] = useState("");
   const [remoteCursors, setRemoteCursors] = useState({});
-  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1280);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [isDrawingOpen, setIsDrawingOpen] = useState(false);
 
@@ -545,6 +561,10 @@ export default function SessionPage() {
       setError(message || "Collaboration error");
     };
 
+    const handleJoinSuccess = ({ message, sessionId, socketId }) => {
+      console.log(`[Session] ✅ Join success - session: ${sessionId}, socket: ${socketId}`);
+    };
+
     const handleSessionDocumentUpdated = ({ documentUrl, documentName, updatedBy }) => {
       if (!documentUrl || !documentName) return;
       setSession((prev) => (prev ? { ...prev, documentUrl, documentName } : prev));
@@ -602,15 +622,21 @@ export default function SessionPage() {
     on("remote-cursor-move", handleRemoteCursorMove);
     on("remote-cursor-leave", handleRemoteCursorLeave);
     on("error", handleSocketError);
+    on("join-success", handleJoinSuccess);
 
-    // Ensure current presence is synced even if initial join happened before listeners were attached.
-    if (socket.connected && sessionId && selfUser) {
-      socket.emit("join-session", {
-        sessionId,
-        userId: resolveSessionUserId(selfUser),
-        username: resolveUsername(selfUser, guestName),
-      });
-    }
+    // Handle drawing board state from other users - use direct socket listener
+    const handleDrawingBoardOpened = () => {
+      console.log("[Drawing] 🎨 ✅ RECEIVED: drawing-board-opened event in SessionPage");
+      setIsDrawingOpen(true);
+      console.log("[Drawing] 🎨 setIsDrawingOpen(true) called");
+    };
+
+    console.log("[Drawing] 🎨 Setting up drawing-board-opened listener on socket", socket?.id);
+    socket.on("drawing-board-opened", handleDrawingBoardOpened);
+    console.log("[Drawing] 🎨 ✅ Listener attached: drawing-board-opened");
+
+    // Note: Do NOT manually emit join-session here - initSocket already handles it
+    // This was causing double join emissions
 
     return () => {
       off("highlight", handleHighlightSocket);
@@ -630,6 +656,8 @@ export default function SessionPage() {
       off("remote-cursor-move", handleRemoteCursorMove);
       off("remote-cursor-leave", handleRemoteCursorLeave);
       off("error", handleSocketError);
+      off("join-success", handleJoinSuccess);
+      socket.off("drawing-board-opened", handleDrawingBoardOpened);
     };
   }, [session, currentUser, user, guestName, sessionId, selfUser, currentPage, resolveSessionUserId, createPeerConnection, closePeerConnection, localStream, applyRemoteOfferSafely]);
 
@@ -1121,10 +1149,10 @@ export default function SessionPage() {
   const remoteEntries = Object.entries(remoteStreams);
 
   return (
-    <div className="relative w-full h-screen flex flex-col overflow-hidden bg-slate-950 text-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(6,182,212,0.2),transparent_32%),radial-gradient(circle_at_82%_14%,rgba(16,185,129,0.18),transparent_36%),radial-gradient(circle_at_50%_100%,rgba(251,191,36,0.16),transparent_38%)]" />
+    <div className="session-room relative w-full h-screen flex flex-col overflow-hidden bg-slate-950 text-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(130,113,211,0.2),transparent_34%),radial-gradient(circle_at_84%_10%,rgba(214,241,126,0.11),transparent_34%),radial-gradient(circle_at_50%_100%,rgba(91,79,152,0.16),transparent_38%)]" />
 
-      <div className="relative z-10 border-b border-white/10 bg-slate-900/65 p-2 md:p-4 shadow-lg backdrop-blur-xl flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 md:gap-4">
+      <div className="session-topbar relative z-20 border-b border-white/10 bg-slate-900/75 p-2 md:p-4 shadow-lg backdrop-blur-xl flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2 md:gap-4">
         <div className="flex items-center gap-2 md:gap-4 min-w-0">
           <div className="min-w-0">
             <h1 className="font-semibold text-slate-100 text-sm md:text-base truncate">{session.sessionName || session.documentName}</h1>
@@ -1132,7 +1160,7 @@ export default function SessionPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 md:gap-2 flex-wrap justify-end">
+        <div className="session-toolbar flex items-center gap-1 md:gap-2 flex-wrap justify-end">
           <div className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 shrink-0">
             <Users size={14} className="text-cyan-200 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm font-medium text-cyan-100">{activeUsers.length}</span>
@@ -1154,24 +1182,24 @@ export default function SessionPage() {
             )}
           </div>
 
-          <button
+          <ActionButton
             onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 transition text-xs md:text-sm shrink-0"
             title="Invite people to session"
+            className="border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20"
           >
             <Share2 size={14} className="md:w-4 md:h-4" />
             <span className="hidden sm:inline">Share</span>
-          </button>
+          </ActionButton>
 
-          <button
+          <ActionButton
             onClick={handleClickUploadPdf}
             disabled={isUploadingPdf}
-            className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm disabled:opacity-60 shrink-0"
             title="Upload/replace PDF for this session"
+            className="border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 disabled:opacity-60"
           >
             <Upload size={14} className="md:w-4 md:h-4" />
             <span className="hidden sm:inline">{isUploadingPdf ? "Uploading..." : "PDF"}</span>
-          </button>
+          </ActionButton>
 
           <input
             ref={pdfInputRef}
@@ -1181,22 +1209,21 @@ export default function SessionPage() {
             onChange={handlePdfFileChange}
           />
 
-          <button
+          <ActionButton
             onClick={handleToggleAV}
-            className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg transition text-xs md:text-sm shrink-0 ${
-              isMediaOn ? "border border-amber-300/30 bg-amber-400/15 text-amber-100" : "border border-white/20 bg-white/10 text-slate-100 hover:bg-white/20"
-            }`}
             title="Join/leave live audio and video"
+            className={`${isMediaOn ? "border border-amber-300/30 bg-amber-400/15 text-amber-100" : "border border-white/20 bg-white/10 text-slate-100 hover:bg-white/20"}`}
           >
             <span className="hidden sm:inline">{isMediaOn ? "Leave" : "Join"} AV</span>
-            <span className="sm:hidden text-xs">{isMediaOn ? "✓" : "○"}</span>
-          </button>
+            <span className="sm:hidden text-xs">{isMediaOn ? "Leave" : "Join"}</span>
+          </ActionButton>
 
           <button
             onClick={() => setMicOn((v) => !v)}
             disabled={!isMediaOn}
             className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 shrink-0"
             title="Toggle microphone"
+            aria-label="Toggle microphone"
           >
             {micOn ? <Mic size={14} className="md:w-4 md:h-4" /> : <MicOff size={14} className="md:w-4 md:h-4" />}
           </button>
@@ -1206,6 +1233,7 @@ export default function SessionPage() {
             disabled={!isMediaOn}
             className="p-1.5 md:p-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 disabled:opacity-40 shrink-0"
             title="Toggle camera"
+            aria-label="Toggle camera"
           >
             {camOn ? <Camera size={14} className="md:w-4 md:h-4" /> : <CameraOff size={14} className="md:w-4 md:h-4" />}
           </button>
@@ -1231,7 +1259,7 @@ export default function SessionPage() {
           {!showLeftSidebar && (
             <button
               onClick={() => setShowLeftSidebar(true)}
-              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm shrink-0"
+              className="hidden xl:flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm shrink-0"
               title="Show live participants"
             >
               <Users size={14} className="md:w-4 md:h-4" />
@@ -1260,20 +1288,99 @@ export default function SessionPage() {
         </div>
       </div>
 
-      <div className="relative z-10 flex flex-1 overflow-hidden gap-2 md:gap-4 p-2 md:p-4 flex-col lg:flex-row">
+      {/* Mobile Participants Bar - Only on Mobile */}
+      <div className="xl:hidden relative z-15 px-2 md:px-4 py-2 bg-slate-900/60 border-b border-white/10 flex items-center gap-2 overflow-x-auto">
+        <button
+          onClick={() => setShowLeftSidebar(true)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20 transition text-xs md:text-sm shrink-0 whitespace-nowrap"
+          title="View live participants"
+        >
+          <Users size={16} />
+          <span className="text-xs md:text-sm font-medium">{activeUsers.length} {activeUsers.length === 1 ? "person" : "people"} here</span>
+        </button>
+      </div>
+
+      {/* Participants Modal for Mobile */}
+      {showLeftSidebar && (
+        <div className="xl:hidden fixed inset-0 z-50 bg-black/60 flex items-end" role="dialog" aria-modal="true" aria-label="Live participants" onClick={() => setShowLeftSidebar(false)}>
+          <div className="w-full bg-slate-900/95 backdrop-blur-xl rounded-t-2xl border-t border-white/15 p-4 max-h-[min(76dvh,680px)] overflow-y-auto" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-200">Live Participants</p>
+              <button
+                onClick={() => setShowLeftSidebar(false)}
+                className="p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                title="Close participants"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {isMediaOn && (
+                <div className="overflow-hidden rounded-xl border border-white/20 bg-black shadow-lg relative">
+                  <div className="px-3 py-2 text-xs font-semibold text-white bg-slate-900/80 flex items-center justify-between">
+                    <span>You</span>
+                    <span className="text-[10px] text-slate-200">{micOn ? "Mic On" : "Mic Off"} - {camOn ? "Cam On" : "Cam Off"}</span>
+                  </div>
+
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={camOn ? "h-36 w-full object-cover bg-black" : "absolute h-px w-px opacity-0 pointer-events-none -z-10"}
+                  />
+
+                  {!camOn && (
+                    <div className="h-36 w-full bg-slate-900 text-slate-200 flex items-center justify-center text-sm font-medium">
+                      Your camera is off
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {remoteEntries.map(([socketId, stream]) => {
+                const participant = mediaStates[socketId] || activeUsers.find((u) => u.socketId === socketId) || {};
+                return (
+                  <RemoteMediaTile
+                    key={socketId}
+                    stream={stream}
+                    username={participant.username}
+                    camOn={participant.camOn}
+                    micOn={participant.micOn}
+                  />
+                );
+              })}
+
+              {!isMediaOn && remoteEntries.length === 0 && (
+                <div className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-slate-200">
+                  No one is live yet. Click "Join AV" to appear here.
+                </div>
+              )}
+
+              <div className="border-t border-white/15 pt-3 text-[11px] text-slate-200 leading-relaxed">
+                Session members: {activeUsers.map((u) => u.username).filter(Boolean).join(", ") || "No active members"}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="session-body relative z-10 flex flex-1 overflow-y-auto xl:overflow-hidden gap-2 md:gap-4 p-2 md:p-4 flex-col xl:flex-row">
         {joinNotice && (
-          <div className="absolute top-20 right-3 md:right-6 z-40 rounded-lg border border-emerald-300/30 bg-emerald-500/90 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white shadow-lg max-w-xs md:max-w-none">
+          <div className="fixed top-28 md:top-32 right-3 md:right-6 z-40 rounded-lg border border-emerald-300/30 bg-emerald-500/90 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white shadow-lg max-w-xs md:max-w-none">
             {joinNotice}
           </div>
         )}
 
         {pdfUpdateNotice && (
-          <div className="absolute top-20 left-3 md:left-6 z-40 rounded-lg border border-cyan-300/30 bg-cyan-500/90 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white shadow-lg max-w-xs md:max-w-none">
+          <div className="fixed top-28 md:top-32 left-3 md:left-6 z-40 rounded-lg border border-cyan-300/30 bg-cyan-500/90 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white shadow-lg max-w-xs md:max-w-none">
             {pdfUpdateNotice}
           </div>
         )}
 
-        <aside className={`w-full lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-slate-900/70 p-3 shadow-2xl backdrop-blur-xl flex flex-col max-h-48 lg:max-h-none order-2 lg:order-1 transition-all duration-300 ${
+        {/* Desktop Participants Sidebar */}
+        <aside className={`hidden xl:flex w-72 shrink-0 rounded-2xl border border-white/15 bg-slate-900/70 p-3 shadow-2xl backdrop-blur-xl flex-col max-h-none order-2 xl:order-1 transition-all duration-300 ${
           showLeftSidebar ? "opacity-100 visible" : "opacity-0 invisible w-0 p-0"
         }`}>
           <div className="mb-3 flex items-center justify-between">
@@ -1342,65 +1449,153 @@ export default function SessionPage() {
         </aside>
 
         {mediaError && (
-          <div className="absolute top-32 right-6 z-40 rounded-lg border border-rose-300/30 bg-rose-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          <div className="fixed top-32 right-6 z-40 rounded-lg border border-rose-300/30 bg-rose-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg">
             {mediaError}
           </div>
         )}
 
-        <div className="flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative order-1 lg:order-2 min-h-96">
-          <PDFViewer
-            documentUrl={session.documentUrl}
-            currentPage={currentPage}
-            onPageChange={handlePageChange}
-            numPages={numPages}
-            onLoadSuccess={handlePDFLoadSuccess}
-          />
+        {/* Desktop Layout */}
+        <div className="hidden xl:flex flex-1 gap-2 md:gap-4 order-1 xl:order-2 min-w-0">
+          <div className="flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative">
+            <PDFViewer
+              documentUrl={session.documentUrl}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+              numPages={numPages}
+              onLoadSuccess={handlePDFLoadSuccess}
+            />
 
-          <HighlightLayer
-            highlights={highlights}
-            onHighlight={handleHighlight}
-            onSelectionAction={handleSelectionAction}
-            currentPage={currentPage}
-            sessionId={sessionId}
-            username={resolveUsername(currentUser || user, guestName)}
-          />
+            <HighlightLayer
+              highlights={highlights}
+              onHighlight={handleHighlight}
+              onSelectionAction={handleSelectionAction}
+              currentPage={currentPage}
+              sessionId={sessionId}
+              username={resolveUsername(currentUser || user, guestName)}
+            />
 
-          <RemoteCursorLayer remoteCursors={remoteCursors} />
-        </div>
-
-        <div className={`w-full lg:w-96 flex flex-col gap-3 md:gap-4 overflow-hidden order-3 md:order-3 max-h-64 md:max-h-none transition-all duration-300 ${
-          showRightSidebar ? "opacity-100 visible" : "opacity-0 invisible w-0 gap-0"
-        }`}>
-          <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl p-3 md:p-4 overflow-y-auto shrink-0 max-h-32 md:max-h-1/3">
-            <div className="flex items-center justify-between mb-2 md:mb-3">
-              <h3 className="font-semibold text-slate-900 text-sm md:text-base">Highlights ({highlights.length})</h3>
-              <button
-                onClick={() => setShowRightSidebar(false)}
-                className="p-1 rounded-lg hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
-                title="Close highlights panel"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="space-y-1 md:space-y-2 text-xs md:text-sm max-h-24 md:max-h-40 overflow-y-auto">
-              {highlights.slice(0, 5).map((h, idx) => (
-                <button
-                  key={h._id || idx}
-                  onClick={() => {
-                    setSelectedHighlight(h);
-                    setCurrentPage(h.page);
-                  }}
-                  style={{ borderLeftColor: h.color }}
-                  className="w-full text-left p-1.5 md:p-2 bg-slate-100/80 hover:bg-cyan-50 rounded border-l-4 transition cursor-pointer"
-                >
-                  <p className="text-xs font-medium text-slate-600 truncate">{h.username}</p>
-                  <p className="text-slate-700 text-xs line-clamp-2">{prettifySnippet(h.text, 56)}</p>
-                </button>
-              ))}
-            </div>
+            <RemoteCursorLayer remoteCursors={remoteCursors} />
           </div>
 
-          {selectedHighlight ? (
+          <div className={`w-80 2xl:w-96 flex flex-col gap-3 md:gap-4 overflow-hidden order-3 transition-all duration-300 ${
+            showRightSidebar ? "opacity-100 visible" : "opacity-0 invisible w-0 gap-0"
+          }`}>
+            <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl p-3 md:p-4 overflow-y-auto shrink-0 max-h-1/3">
+              <div className="flex items-center justify-between mb-2 md:mb-3">
+                <h3 className="font-semibold text-slate-900 text-sm md:text-base">Highlights ({highlights.length})</h3>
+                <button
+                  onClick={() => setShowRightSidebar(false)}
+                  className="p-1 rounded-lg hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
+                  title="Close highlights panel"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="space-y-1 md:space-y-2 text-xs md:text-sm max-h-40 overflow-y-auto">
+                {highlights.slice(0, 5).map((h, idx) => (
+                  <button
+                    key={h._id || idx}
+                    onClick={() => {
+                      setSelectedHighlight(h);
+                      setCurrentPage(h.page);
+                    }}
+                    style={{ borderLeftColor: h.color }}
+                    className="w-full text-left p-1.5 md:p-2 bg-slate-100/80 hover:bg-cyan-50 rounded border-l-4 transition cursor-pointer"
+                  >
+                    <p className="text-xs font-medium text-slate-600 truncate">{h.username}</p>
+                    <p className="text-slate-700 text-xs line-clamp-2">{prettifySnippet(h.text, 56)}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {selectedHighlight ? (
+              <CommentsPanel
+                highlight={selectedHighlight}
+                comments={comments}
+                onAddComment={handleAddComment}
+                onClose={() => setSelectedHighlight(null)}
+                username={resolveUsername(currentUser || user, guestName)}
+                userId={resolveSessionUserId(currentUser || user)}
+              />
+            ) : (
+              <div className="flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden flex flex-col">
+                <NotesPanel
+                  notes={notes}
+                  onNotesChange={handleNotesChange}
+                  username={resolveUsername(currentUser || user, guestName)}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Layout - Scrollable */}
+        <div className="xl:hidden flex flex-col gap-3 md:gap-4 order-1 xl:order-2 w-full">
+          {/* PDF Viewer */}
+          <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative h-[min(68dvh,640px)] min-h-[320px]">
+            <PDFViewer
+              documentUrl={session.documentUrl}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+              numPages={numPages}
+              onLoadSuccess={handlePDFLoadSuccess}
+            />
+
+            <HighlightLayer
+              highlights={highlights}
+              onHighlight={handleHighlight}
+              onSelectionAction={handleSelectionAction}
+              currentPage={currentPage}
+              sessionId={sessionId}
+              username={resolveUsername(currentUser || user, guestName)}
+            />
+
+            <RemoteCursorLayer remoteCursors={remoteCursors} />
+          </div>
+
+          {showRightSidebar && (
+            <>
+              {/* Highlights Section */}
+              <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl p-3 md:p-4">
+                <h3 className="font-semibold text-slate-900 text-sm md:text-base mb-2 md:mb-3">Highlights ({highlights.length})</h3>
+                <div className="space-y-1 md:space-y-2 text-xs md:text-sm max-h-48 overflow-y-auto">
+                  {highlights.length > 0 ? (
+                    highlights.map((h, idx) => (
+                      <button
+                        key={h._id || idx}
+                        onClick={() => {
+                          setSelectedHighlight(h);
+                          setCurrentPage(h.page);
+                        }}
+                        style={{ borderLeftColor: h.color }}
+                        className="w-full text-left p-1.5 md:p-2 bg-slate-100/80 hover:bg-cyan-50 rounded border-l-4 transition cursor-pointer"
+                      >
+                        <p className="text-xs font-medium text-slate-600 truncate">{h.username}</p>
+                        <p className="text-slate-700 text-xs line-clamp-2">{prettifySnippet(h.text, 56)}</p>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-slate-500 text-sm">No highlights yet. Select text in the PDF to highlight.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Notes Section */}
+              {!selectedHighlight && (
+                <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden flex flex-col h-64">
+                  <NotesPanel
+                    notes={notes}
+                    onNotesChange={handleNotesChange}
+                    username={resolveUsername(currentUser || user, guestName)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Comments Panel */}
+          {selectedHighlight && (
             <CommentsPanel
               highlight={selectedHighlight}
               comments={comments}
@@ -1409,14 +1604,6 @@ export default function SessionPage() {
               username={resolveUsername(currentUser || user, guestName)}
               userId={resolveSessionUserId(currentUser || user)}
             />
-          ) : (
-            <div className="flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden flex flex-col">
-              <NotesPanel
-                notes={notes}
-                onNotesChange={handleNotesChange}
-                username={resolveUsername(currentUser || user, guestName)}
-              />
-            </div>
           )}
         </div>
       </div>
@@ -1498,7 +1685,7 @@ export default function SessionPage() {
         documentName={session.documentName}
       />
 
-      <DrawingCanvas
+      <FloatingDrawingBoard
         isOpen={isDrawingOpen}
         onClose={() => setIsDrawingOpen(false)}
         sessionId={sessionId}

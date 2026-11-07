@@ -132,7 +132,7 @@ export default function CreateSessionModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl border border-slate-200 p-8 relative max-h-[90vh] overflow-y-auto">
+      <div className="create-session-modal w-full max-w-2xl rounded-3xl bg-white shadow-2xl border border-slate-200 p-5 sm:p-8 relative max-h-[90dvh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -149,7 +149,7 @@ export default function CreateSessionModal({ isOpen, onClose }) {
                 <Users size={24} />
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-slate-900">Create Study Session</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Create Study Session</h2>
                 <p className="text-slate-500 mt-1">Invite others to study together in real-time</p>
               </div>
             </div>
@@ -246,12 +246,12 @@ export default function CreateSessionModal({ isOpen, onClose }) {
               {/* Share Link Box */}
               <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 mb-8">
                 <p className="text-sm text-slate-500 mb-3">Session Link</p>
-                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-300 p-4">
+                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-300 p-3 sm:p-4">
                   <input
                     type="text"
                     readOnly
                     value={`${window.location.origin}/session/${createdSession.sessionId}`}
-                    className="flex-1 outline-none text-slate-700 font-mono text-sm"
+                    className="min-w-0 flex-1 outline-none text-slate-700 font-mono text-xs sm:text-sm"
                   />
                   <button
                     onClick={handleCopyLink}
@@ -263,7 +263,7 @@ export default function CreateSessionModal({ isOpen, onClose }) {
               </div>
 
               {/* Session Details */}
-              <div className="grid grid-cols-2 gap-4 mb-8 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8 text-left">
                 <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
                   <p className="text-xs text-blue-600 uppercase font-semibold mb-2">Session Name</p>
                   <p className="text-lg font-bold text-blue-900">{createdSession.sessionName}</p>
@@ -275,7 +275,7 @@ export default function CreateSessionModal({ isOpen, onClose }) {
               </div>
 
               {/* Buttons */}
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 justify-center">
                 <button
                   onClick={onClose}
                   className="px-6 py-3 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition"

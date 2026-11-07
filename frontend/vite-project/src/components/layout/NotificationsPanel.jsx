@@ -84,7 +84,7 @@ export default function NotificationsPanel() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 transition shrink-0"
+        className="notification-trigger relative p-2 text-gray-600 hover:text-gray-900 transition shrink-0"
         aria-label="Notifications"
       >
         <Bell size={20} className="md:w-6 md:h-6" />
@@ -97,7 +97,7 @@ export default function NotificationsPanel() {
 
       {/* Notifications Panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-screen sm:w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+        <div className="notification-panel absolute right-0 mt-2 w-screen sm:w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 p-3 md:p-4">
             <h3 className="font-bold text-gray-800 text-sm md:text-base">Notifications</h3>

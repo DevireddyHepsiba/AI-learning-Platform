@@ -106,17 +106,21 @@ const ProfilePage = () => {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <h1 className="text-4xl font-bold">Profile Settings</h1>
+      <div className="profile-page space-y-6">
+        <div className="page-intro">
+          <div className="eyebrow"><span className="eyebrow-dot" /> YOUR ACCOUNT</div>
+          <h1 className="text-4xl font-bold">Profile settings</h1>
+          <p>Keep your details up to date and manage how you sign in.</p>
+        </div>
 
         {profileLoading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 flex items-center justify-center gap-3 text-slate-600">
             <Loader2 className="animate-spin" size={20} /> Loading profile...
           </div>
         ) : (
-          <>
-            <form onSubmit={handleProfileSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-              <h2 className="text-3xl font-semibold">User Information</h2>
+          <div className="profile-form-grid">
+            <form onSubmit={handleProfileSubmit} className="profile-form rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+              <div className="form-section-heading"><span className="form-section-icon"><User size={18} /></span><div><h2 className="text-3xl font-semibold">Your details</h2><p>How you appear around Morrow.</p></div></div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
@@ -158,8 +162,8 @@ const ProfilePage = () => {
               </div>
             </form>
 
-            <form onSubmit={handlePasswordSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-              <h2 className="text-3xl font-semibold">Change Password</h2>
+            <form onSubmit={handlePasswordSubmit} className="profile-form rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+              <div className="form-section-heading"><span className="form-section-icon"><Lock size={18} /></span><div><h2 className="text-3xl font-semibold">Sign-in security</h2><p>Choose a password that’s yours alone.</p></div></div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Current Password</label>
@@ -216,7 +220,7 @@ const ProfilePage = () => {
                 </button>
               </div>
             </form>
-          </>
+          </div>
         )}
       </div>
     </AppShell>
