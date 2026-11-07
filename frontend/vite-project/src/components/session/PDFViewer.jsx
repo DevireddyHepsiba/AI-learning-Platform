@@ -126,14 +126,14 @@ export default function PDFViewer({
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+      <div className="pdf-viewer flex flex-col h-full bg-gray-50">
       {/* PDF Controls */}
-      <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-10">
+      <div className="pdf-controls bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <button
             onClick={handlePreviousPage}
             disabled={currentPage <= 1 || loading}
-            className="px-3 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 hover:bg-blue-600 transition"
+            className="pdf-page-button px-3 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 hover:bg-blue-600 transition"
           >
             ← Prev
           </button>
@@ -146,7 +146,7 @@ export default function PDFViewer({
               value={currentPage}
               onChange={handlePageInputChange}
               disabled={loading}
-              className="w-12 px-2 py-1 border border-gray-300 rounded text-center text-gray-900 bg-white caret-gray-900 disabled:bg-gray-100"
+              className="pdf-page-input w-12 px-2 py-1 border border-gray-300 rounded text-center text-gray-900 bg-white caret-gray-900 disabled:bg-gray-100"
             />
             <span className="text-gray-600">of {numPages || "?"}</span>
           </div>
@@ -154,7 +154,7 @@ export default function PDFViewer({
           <button
             onClick={handleNextPage}
             disabled={currentPage >= numPages || loading}
-            className="px-3 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 hover:bg-blue-600 transition"
+            className="pdf-page-button px-3 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 hover:bg-blue-600 transition"
           >
             Next →
           </button>

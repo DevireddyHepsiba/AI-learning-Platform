@@ -162,9 +162,63 @@
   .hero-wrap { padding-top: 12px; }.hero-panel { border-radius: 25px; }.hero-product { max-width: 420px; }.float-note-top { right: -5px; }.float-note-bottom { left: -6px; }.hero-footnote { font-size: 8px; }.hero-footnote span:last-child { font-size: 10px; }.dashboard-heading { align-items: flex-start; flex-direction: column; }.dashboard-heading .button { width: 100%; }.dashboard-main-grid { grid-template-columns: 1fr; }.continue-card { grid-template-columns: .85fr 1.15fr; }.continue-art { min-height: 270px; }.continue-copy { padding: 20px; }.continue-copy h2 { font-size: 24px; }.dashboard-stats { gap: 8px; }.dashboard-stat { min-height: 137px; padding: 13px; }.stat-icon { width: 33px; height: 33px; }.stat-label { font-size: 10px; }.dashboard-stat strong { font-size: 28px; }.stat-footer { font-size: 8px; }.profile-copy, .profile-chevron { display: none; }.topbar-actions { gap: 10px; }.workspace-footer { font-size: 9px; }.nudge-check { display: none; }
 }
 @media (max-width: 1279px) {
-  .session-toolbar { max-width: calc(100vw - 20px); flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 2px; }
+  .session-topbar { align-items: stretch; }
+  .session-toolbar { width: 100%; min-width: 0; max-width: 100%; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; padding: 3px 1px 7px; }
   .session-toolbar > div:nth-child(2) { flex: 0 0 auto; }
   .session-body { overflow-y: auto; }
+}
+
+/* Flashcard collection: keep cards and copy inside the available mobile width. */
+.flashcards-page { width: 100%; max-width: 1240px; min-width: 0; }
+.flashcards-intro { max-width: 680px; min-width: 0; }
+.flashcards-intro h1 { color: #292a3d; font-family: "Fraunces", Georgia, serif; font-size: clamp(36px, 5vw, 54px); font-weight: 500; letter-spacing: -.055em; line-height: 1.04; overflow-wrap: anywhere; }
+.flashcards-intro > p { max-width: 42ch; text-wrap: pretty; }
+.flashcard-set-grid { min-width: 0; align-items: stretch; }
+.flashcard-set-card { display: flex; min-width: 0; flex-direction: column; border-color: #e8e8e4; border-radius: 20px; padding: 21px; box-shadow: 0 7px 24px #25263a08; }
+.flashcard-set-card:hover { border-color: #d8d2ef; box-shadow: 0 16px 34px #25263a10; transform: translateY(-2px); }
+.flashcard-set-icon { color: #7563c9 !important; background: #f0edfb !important; }
+.flashcard-set-delete { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #eee9e8; border-radius: 12px; color: #b15d69 !important; background: #fff7f6 !important; }
+.flashcard-set-delete:hover { border-color: #e9c9c9; background: #fff0ed !important; }
+.flashcard-set-title { color: #303145; font-family: "DM Sans", sans-serif; font-size: clamp(20px, 2vw, 24px); font-weight: 600; letter-spacing: -.04em; overflow-wrap: anywhere; }
+.flashcard-set-date { min-height: 20px; color: #9394a0 !important; font-size: 11px !important; line-height: 1.5; overflow-wrap: anywhere; }
+.flashcard-set-percent { color: #6d5abb !important; background: #f0edfb !important; }
+.flashcard-set-progress-fill { border-radius: inherit; background: linear-gradient(90deg, #8b7ad7, #b6a8eb) !important; }
+.flashcard-set-study { margin-top: auto !important; min-height: 48px; border: 0; border-radius: 13px !important; color: #fff !important; background: #292a40 !important; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
+.flashcard-set-study:hover { background: #41425b !important; box-shadow: 0 8px 18px #292a4022; transform: translateY(-1px); }
+
+/* Session tools use the same paper, ink and lavender system as the workspace. */
+.session-pdf-panel, .session-pdf-panel .pdf-viewer { min-width: 0; min-height: 0; }
+.session-pdf-panel .pdf-viewer { background: #f1f1ef; }
+.session-pdf-panel .pdf-controls { min-height: 68px; flex-wrap: wrap; gap: 12px; border-color: #e8e8e4; padding: 12px clamp(12px, 2vw, 22px); background: #fcfcfa; }
+.session-pdf-panel .pdf-controls > div { flex-wrap: wrap; gap: 8px; }
+.session-pdf-panel .pdf-page-button { min-height: 40px; border: 1px solid #e8e8e4; border-radius: 11px; padding: 0 14px; color: #46475a; background: #f2f1f8; font-weight: 600; }
+.session-pdf-panel .pdf-page-button:hover:not(:disabled) { border-color: #d8d2ef; color: #6354a8; background: #eeebfa; }
+.session-pdf-panel .pdf-page-button:disabled { color: #a3a4ad; background: #f1f1ef; }
+.session-pdf-panel .pdf-page-input { min-height: 40px; border-color: #e5e2ee; border-radius: 10px; background: white; }
+.session-pdf-panel .pdf-page-input:focus { border-color: #9485d7; outline: 0; box-shadow: 0 0 0 3px #9485d71c; }
+.session-pdf-panel .pdf-controls span, .session-pdf-panel .pdf-controls > span { color: #7e8090; }
+.session-pdf-panel .pdf-scroll-container { align-items: flex-start; background: #f0f0ee; padding: clamp(8px, 1.5vw, 20px); }
+.session-pdf-panel .pdf-scroll-container .react-pdf__Document { max-width: 100%; }
+.session-pdf-panel .pdf-scroll-container .react-pdf__Page { max-width: 100%; overflow: hidden; border: 1px solid #e5e5e3; border-radius: 3px; box-shadow: 0 10px 32px #25263a18; }
+.session-pdf-panel .pdf-scroll-container canvas { display: block; max-width: 100%; height: auto !important; }
+.session-topbar { border-color: #ffffff13; background: #25263cf2; }
+.session-toolbar > button { border-color: #ffffff25 !important; color: #eeeafd !important; background: #ffffff0b !important; }
+.session-toolbar > button:hover:not(:disabled) { border-color: #a99be255 !important; background: #8f7ed326 !important; }
+.session-toolbar > button[class*="amber"] { border-color: #e8c37c55 !important; color: #f7e8c4 !important; background: #e8c37c1c !important; }
+.session-toolbar > div:first-child { border-color: #a99be244; background: #8f7ed31c; }
+.session-toolbar > div:first-child svg, .session-toolbar > div:first-child span { color: #e4ddff; }
+.session-toolbar > div:nth-child(2) > span { border-color: #ffffff1f; color: #d8d5e7; background: #ffffff0a; }
+
+@media (max-width: 760px) {
+  .flashcards-intro, .flashcard-set-grid { width: 100%; }
+  .flashcard-set-grid { grid-template-columns: minmax(0, 1fr); }
+  .flashcards-intro > p { max-width: 34ch; font-size: 13px; line-height: 1.65; }
+  .flashcard-set-card { padding: 19px; }
+  .session-topbar { gap: 6px; }
+  .session-toolbar { margin-inline: -1px; }
+  .session-pdf-panel .pdf-controls { align-items: flex-start; padding: 10px; }
+  .session-pdf-panel .pdf-controls > div { gap: 6px; }
+  .session-pdf-panel .pdf-page-button { min-height: 38px; padding-inline: 11px; }
 }
 @media (max-width: 520px) {
   .landing-nav { padding-top: 15px; padding-bottom: 15px; }.landing-nav .brand-name { font-size: 19px; }.landing-nav .button-small { min-height: 39px; padding: 0 11px; font-size: 11px; }.nav-login { padding: 8px 4px; font-size: 12px; }.hero-panel { padding: 26px 20px 34px; }.hero-panel .hero-title { font-size: clamp(3.45rem, 19vw, 5.5rem); }.hero-product { margin-top: 42px; }.product-content { padding: 18px 15px 15px; }.product-bottom { gap: 9px; padding: 10px; }.product-progress { padding-left: 9px; }.float-note { padding: 7px 8px; }.float-note-top { top: 28px; right: -4px; }.float-note-bottom { bottom: 23px; left: -4px; }.hero-footnote { align-items: flex-start; flex-direction: column; gap: 4px; }.section-title { font-size: 2.9rem; }.method-card { min-height: unset; }.method-card h3 { margin-top: 20px; }.feature-banner { border-radius: 24px; }.feature-tile { min-height: 170px; }.landing-footer { align-items: flex-start; }.workspace-content { padding: 25px 16px 25px; }.workspace-topbar { padding: 0 17px; }.topbar-kicker { font-size: 7px; }.topbar-subtitle { font-size: 13px; }.dashboard-heading h1 { font-size: 37px; }.dashboard-heading p { max-width: 300px; font-size: 12px; line-height: 1.6; }.dashboard-stats { grid-template-columns: 1fr; }.dashboard-stat { min-height: 102px; grid-template-columns: auto 1fr auto; align-items: center; padding: 13px 15px; }.stat-icon { grid-column: 1; grid-row: 1 / span 2; width: 38px; height: 38px; }.stat-label { grid-column: 2; grid-row: 1; padding-left: 12px; }.dashboard-stat strong { grid-column: 3; grid-row: 1 / span 2; margin: 0 8px; font-size: 30px; }.stat-footer { grid-column: 2; grid-row: 2; margin: 1px 0 0; padding-left: 12px; }.continue-card { grid-template-columns: 1fr; }.continue-art { min-height: 180px; }.continue-copy { padding: 19px; }.continue-copy h2 { max-width: 290px; }.activity-card { padding: 17px; }.activity-copy small { font-size: 7px; }.dashboard-nudge { align-items: flex-start; padding: 12px; }.dashboard-nudge small { line-height: 1.5; }.auth-panel { padding: 25px 21px !important; border-radius: 21px !important; }.workspace-footer { padding: 13px 16px; }.profile-form-grid { grid-template-columns: 1fr; }.profile-form { padding: 20px !important; }.quiz-navigation { display: grid; grid-template-areas: "prev next" "jumps jumps"; grid-template-columns: repeat(2, minmax(0, 1fr)); }.quiz-prev { grid-area: prev; }.quiz-next { grid-area: next; }.quiz-question-jump { grid-area: jumps; max-width: 100%; }.flashcard-navigation { gap: 9px; }.flashcard-navigation button { min-width: 0; flex: 1; }.comments-panel { height: min(82dvh, 720px); }.session-topbar { padding: 8px 10px; }.session-toolbar { width: 100%; }.session-toolbar > button, .session-toolbar > div:first-child { min-height: 34px; }.session-body { padding: 9px; }.session-room .notes-panel { border-radius: 14px; }.session-room .notes-panel textarea { min-height: 145px; }.drawing-board { border-radius: 16px; }.drawing-board > div:nth-child(2) { gap: 8px; padding: 8px; }

@@ -1456,7 +1456,7 @@ export default function SessionPage() {
 
         {/* Desktop Layout */}
         <div className="hidden xl:flex flex-1 gap-2 md:gap-4 order-1 xl:order-2 min-w-0">
-          <div className="flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative">
+          <div className="session-pdf-panel flex-1 rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative">
             <PDFViewer
               documentUrl={session.documentUrl}
               currentPage={currentPage}
@@ -1533,7 +1533,7 @@ export default function SessionPage() {
         {/* Mobile Layout - Scrollable */}
         <div className="xl:hidden flex flex-col gap-3 md:gap-4 order-1 xl:order-2 w-full">
           {/* PDF Viewer */}
-          <div className="rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative h-[min(68dvh,640px)] min-h-[320px]">
+          <div className="session-pdf-panel rounded-2xl border border-white/15 bg-white/95 shadow-2xl overflow-hidden relative h-[min(68dvh,640px)] min-h-[320px]">
             <PDFViewer
               documentUrl={session.documentUrl}
               currentPage={currentPage}

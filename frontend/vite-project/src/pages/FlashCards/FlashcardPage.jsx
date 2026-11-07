@@ -179,23 +179,23 @@ const FlashcardPage = () => {
     return (
       <AppShell>
         <div className="flashcards-page space-y-6">
-          <div className="page-intro"><div className="eyebrow"><span className="eyebrow-dot" /> ACTIVE RECALL</div><h1 className="text-4xl font-bold">Flashcards</h1><p>Small rounds of practice make new ideas easier to keep.</p></div>
+          <div className="page-intro flashcards-intro"><div className="eyebrow"><span className="eyebrow-dot" /> ACTIVE RECALL</div><h1 className="text-4xl font-bold">Flashcards</h1><p>Small rounds of practice make new ideas easier to keep.</p></div>
 
           {sets.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-10 text-slate-500">
               No flashcard sets yet. Generate a set from document details.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+            <div className="flashcard-set-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
               {sets.map((set) => {
                 const progress = calculateProgress(set);
                 const title =
                   typeof set.documentId === "object" ? set.documentId?.title : "Flashcard Set";
 
                 return (
-                  <div key={set._id} className="rounded-2xl border border-slate-200 bg-white p-5 hover:border-emerald-300 hover:shadow-sm transition-all">
+                  <div key={set._id} className="flashcard-set-card rounded-2xl border border-slate-200 bg-white p-5 hover:border-emerald-300 hover:shadow-sm transition-all">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 grid place-items-center flex-shrink-0">
+                      <div className="flashcard-set-icon h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 grid place-items-center flex-shrink-0">
                         <BookOpen size={22} />
                       </div>
                       <button
@@ -208,18 +208,18 @@ const FlashcardPage = () => {
                             toast.error("Failed to delete set");
                           }
                         }}
-                        className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex-shrink-0"
+                        className="flashcard-set-delete p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex-shrink-0"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
 
-                    <h3 className="mt-4 text-2xl font-semibold leading-tight line-clamp-2">{title || "Flashcard Set"}</h3>
-                    <p className="text-sm text-slate-500 mt-1 uppercase">Created {new Date(set.createdAt).toLocaleString()}</p>
+                    <h3 className="flashcard-set-title mt-4 text-2xl font-semibold leading-tight line-clamp-2">{title || "Flashcard Set"}</h3>
+                    <p className="flashcard-set-date text-sm text-slate-500 mt-1">Created {new Date(set.createdAt).toLocaleString()}</p>
 
                     <div className="mt-4 flex items-center gap-2 text-sm">
                       <span className="px-3 py-1 rounded-lg border border-slate-200 bg-slate-50">{progress.total} Cards</span>
-                      <span className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-medium">{progress.percentage}%</span>
+                      <span className="flashcard-set-percent px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-medium">{progress.percentage}%</span>
                     </div>
 
                     <div className="mt-4">
@@ -228,13 +228,13 @@ const FlashcardPage = () => {
                         <span>{progress.reviewed}/{progress.total} reviewed</span>
                       </div>
                       <div className="h-2 rounded-full bg-slate-200 mt-2 overflow-hidden">
-                        <div className="h-full bg-emerald-500" style={{ width: `${progress.percentage}%` }} />
+                        <div className="flashcard-set-progress-fill h-full bg-emerald-500" style={{ width: `${progress.percentage}%` }} />
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleStudySet(set)}
-                      className="mt-5 w-full py-3 rounded-xl bg-emerald-100 text-emerald-700 font-semibold hover:bg-emerald-200"
+                      className="flashcard-set-study mt-5 w-full py-3 rounded-xl bg-emerald-100 text-emerald-700 font-semibold hover:bg-emerald-200"
                     >
                       Study Now
                     </button>
